@@ -8,12 +8,15 @@
 Message create_message(uint8_t type, const uint8_t *payload, size_t payload_size) {
     Message message;
     message.type = type;
+
+    memset(message.payload, 0, sizeof(message.payload));
     
     // Sao chép payload vào thông điệp, giới hạn kích thước payload tối đa là 256 byte
     if (payload_size > sizeof(message.payload)) {
         payload_size = sizeof(message.payload); // Giới hạn kích thước nếu vượt quá
     }
     memcpy(message.payload, payload, payload_size);
+    message.payload[payload_size] = '\0';
 
     return message;
 }

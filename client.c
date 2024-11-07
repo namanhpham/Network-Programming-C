@@ -8,6 +8,8 @@
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080
 
+int is_logged_in = 0;
+
 // Hàm kết nối đến server
 int connect_to_server() {
     int sockfd;
@@ -62,32 +64,31 @@ void register_user(int sockfd) {
 void login_user(int sockfd) {
     char username[128], password[128];
     
-    // Yêu cầu người dùng nhập tên đăng nhập và mật khẩu
+    // Prompt the user for username and password
     printf("Enter username for login: ");
     scanf("%127s", username);
     printf("Enter password for login: ");
     scanf("%127s", password);
 
-    // Tạo payload từ tên đăng nhập và mật khẩu
+    // Create the payload in the format "username:password"
     char payload[256];
     snprintf(payload, sizeof(payload), "%s:%s", username, password);
+    
+    // Print the payload for debugging
+    printf("Payload for login: '%s'\n", payload);
 
-    // Tạo thông điệp đăng nhập và gửi tới server
+    // Create the login message and print its contents
     Message msg = create_message(MSG_LOGIN, (uint8_t *)payload, strlen(payload));
+    printf("Message type: %d, Message payload: '%s'\n", msg.type, (char *)msg.payload);
+
+    // Send the message to the server and check for errors
     if (send_message(sockfd, &msg) < 0) {
         perror("Login failed");
+        return;
     }
+    is_logged_in = 1;
+    return;
 }
-
-
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-
-int connect_to_server();
-void register_user(int sockfd);
-void login_user(int sockfd);
-void send_message_example(int sockfd);
 
 int main() {
     int sockfd = connect_to_server();
@@ -107,6 +108,10 @@ int main() {
                 login_user(sockfd);
                 break;
             case 3:
+                if(!is_logged_in) {
+                    printf("You must login first\n");
+                    break;
+                }
                 send_message_example(sockfd);
                 break;
             case 4:
