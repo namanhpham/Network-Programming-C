@@ -109,6 +109,90 @@ void handle_register(int client_socket, const char *payload) {
     }
 }
 
+// Function to validate credentials from the file
+// Helper function to trim newline and other whitespace characters
+void trim_newline(char *str) {
+    size_t len = strlen(str);
+    if (len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r')) {
+        str[len - 1] = '\0';
+    }
+}
+
+// Function to print all accounts from the accounts file for debugging
+void print_accounts() {
+    FILE *file = fopen(ACCOUNTS_FILE, "r");
+    if (!file) {
+        perror("Failed to open accounts file");
+        return;
+    }
+
+    printf("Accounts in %s:\n", ACCOUNTS_FILE);
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        // Print each raw line and then the processed username/password for visibility
+        printf("Raw line: %s", line);
+
+        // Split the line and trim newline for clarity
+        char *username = strtok(line, ":");
+        char *password = strtok(NULL, "\n");
+        if (username) trim_newline(username);
+        if (password) trim_newline(password);
+
+        printf("Parsed username: '%s', password: '%s'\n", username ? username : "NULL", password ? password : "NULL");
+    }
+
+    fclose(file);
+}
+
+// Function to validate credentials from the file
+int validate_credentials(const char *username, const char *password) {
+    print_accounts();  // Debug: print accounts for visibility
+    FILE *file = fopen(ACCOUNTS_FILE, "r");
+    if (!file) {
+        perror("Failed to open accounts file");
+        return 0;
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        // Split username and password
+        char *stored_username = strtok(line, ":");
+        char *stored_password = strtok(NULL, "\n");
+
+        // Trim any newline or whitespace characters
+        if (stored_username) trim_newline(stored_username);
+        if (stored_password) trim_newline(stored_password);
+
+        // Check if credentials match
+        if (stored_username && stored_password &&
+            strcmp(stored_username, username) == 0 &&
+            strcmp(stored_password, password) == 0) {
+            fclose(file);
+            return 1; // Login successful
+        }
+    }
+
+    fclose(file);
+    return 0; // Login failed
+}
+
+
+// Modify handle_login function to validate credentials
+void handle_login(int client_socket, const char *payload) {
+    char username[128], password[128];
+    sscanf(payload, "%127[^:]:%127s", username, password); // Split username and password
+
+    if (validate_credentials(username, password)) {
+        printf("User %s logged in successfully\n", username);
+        Message response = { RESP_SUCCESS, {0} };
+        send_message(client_socket, &response);
+    } else {
+        printf("Invalid credentials for user %s\n", username);
+        Message response = { RESP_FAILURE, {0} };
+        send_message(client_socket, &response);
+    }
+}
+
 // Hàm xử lý yêu cầu từ client
 void *handle_client(void *arg) {
     Client *client = (Client *)arg;
@@ -121,9 +205,7 @@ void *handle_client(void *arg) {
                 handle_register(client->socket, (char *)message.payload);
                 break;
             case MSG_LOGIN:
-                printf("User login\n");
-                client->user_id = 1; // Giả sử đăng nhập thành công
-                send_message(client->socket, &(Message){RESP_SUCCESS, {0}});
+                handle_login(client->socket, (char *)message.payload);
                 break;
             case MSG_PRIVATE_MSG:
                 printf("Private message received\n");
