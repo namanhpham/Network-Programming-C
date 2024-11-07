@@ -29,6 +29,7 @@
 #define RESP_SUCCESS             0x20  // Thông điệp thành công
 #define RESP_FAILURE             0x21  // Thông điệp thất bại
 #define RESP_FRIEND_LIST         0x22  // Danh sách bạn bè và trạng thái
+#define MSG_ONLINE_USERS         0x23  // Danh sách người dùng đang online
 
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)

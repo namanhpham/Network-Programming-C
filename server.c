@@ -15,9 +15,55 @@ typedef struct {
     int socket;
     struct sockaddr_in address;
     int user_id; // Để theo dõi đăng nhập cho từng người dùng
+    char username[128];
+    int is_logged_in;
 } Client;
 
 Client *clients[MAX_CLIENTS];
+
+Client *online_clients[MAX_CLIENTS] = {0};  // List of logged-in clients
+
+// Add client to online list
+void add_online_client(Client *client) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (online_clients[i] == NULL) {
+            online_clients[i] = client;
+            break;
+        }
+    }
+}
+
+// Remove client from online list
+void remove_online_client(Client *client) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (online_clients[i] == client) {
+            online_clients[i] = NULL;
+            break;
+        }
+    }
+}
+
+void send_online_users_list(int client_socket) {
+    char online_users[1024] = {0};
+
+    // Create a comma-separated list of online usernames
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (online_clients[i] && online_clients[i]->is_logged_in) {
+            strcat(online_users, online_clients[i]->username);
+            strcat(online_users, ",");
+        }
+    }
+    
+    // Remove the trailing comma, if any
+    size_t len = strlen(online_users);
+    if (len > 0) {
+        online_users[len - 1] = '\0';
+    }
+
+    // Send the list to the specified client
+    Message msg = create_message(MSG_ONLINE_USERS, (uint8_t *)online_users, strlen(online_users));
+    send_message(client_socket, &msg);
+}
 
 
 // Hàm để thêm client vào danh sách
@@ -118,35 +164,8 @@ void trim_newline(char *str) {
     }
 }
 
-// Function to print all accounts from the accounts file for debugging
-void print_accounts() {
-    FILE *file = fopen(ACCOUNTS_FILE, "r");
-    if (!file) {
-        perror("Failed to open accounts file");
-        return;
-    }
-
-    printf("Accounts in %s:\n", ACCOUNTS_FILE);
-    char line[256];
-    while (fgets(line, sizeof(line), file)) {
-        // Print each raw line and then the processed username/password for visibility
-        printf("Raw line: %s", line);
-
-        // Split the line and trim newline for clarity
-        char *username = strtok(line, ":");
-        char *password = strtok(NULL, "\n");
-        if (username) trim_newline(username);
-        if (password) trim_newline(password);
-
-        printf("Parsed username: '%s', password: '%s'\n", username ? username : "NULL", password ? password : "NULL");
-    }
-
-    fclose(file);
-}
-
 // Function to validate credentials from the file
 int validate_credentials(const char *username, const char *password) {
-    print_accounts();  // Debug: print accounts for visibility
     FILE *file = fopen(ACCOUNTS_FILE, "r");
     if (!file) {
         perror("Failed to open accounts file");
@@ -177,15 +196,43 @@ int validate_credentials(const char *username, const char *password) {
 }
 
 
-// Modify handle_login function to validate credentials
 void handle_login(int client_socket, const char *payload) {
     char username[128], password[128];
     sscanf(payload, "%127[^:]:%127s", username, password); // Split username and password
 
+    // Check if the user is already logged in
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (online_clients[i] && strcmp(online_clients[i]->username, username) == 0) {
+            printf("User %s is already logged in\n", username);
+            Message response = { RESP_FAILURE, {0} };
+            send_message(client_socket, &response);
+            return;
+        }
+    }
+
+    // Validate credentials
     if (validate_credentials(username, password)) {
         printf("User %s logged in successfully\n", username);
+
+        // Update client's status and add to online list
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (clients[i] && clients[i]->socket == client_socket) {
+                strcpy(clients[i]->username, username);
+                clients[i]->is_logged_in = 1;
+                add_online_client(clients[i]);
+                break;
+            }
+        }
+
         Message response = { RESP_SUCCESS, {0} };
         send_message(client_socket, &response);
+
+        // Send the updated online users list to all clients
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (online_clients[i] && online_clients[i]->is_logged_in) {
+                send_online_users_list(online_clients[i]->socket);
+            }
+        }
     } else {
         printf("Invalid credentials for user %s\n", username);
         Message response = { RESP_FAILURE, {0} };
@@ -193,7 +240,6 @@ void handle_login(int client_socket, const char *payload) {
     }
 }
 
-// Hàm xử lý yêu cầu từ client
 void *handle_client(void *arg) {
     Client *client = (Client *)arg;
     Message message;
@@ -217,11 +263,24 @@ void *handle_client(void *arg) {
     }
 
 cleanup:
+    // Remove the client from the online list if logged in
+    if (client->is_logged_in) {
+        remove_online_client(client);
+
+        // Notify all clients of the updated online user list
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (online_clients[i] && online_clients[i]->is_logged_in) {
+                send_online_users_list(online_clients[i]->socket);
+            }
+        }
+    }
+
     close(client->socket);
     remove_client(client->socket);
     free(client);
     pthread_exit(NULL);
 }
+
 
 // Khởi tạo server và chấp nhận kết nối
 int main() {
