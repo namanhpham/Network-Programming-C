@@ -8,20 +8,140 @@
 
 #define PORT 8080
 #define MAX_CLIENTS 10
+#define MAX_FRIENDS 100  // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
 #define ACCOUNTS_FILE "accounts.txt"
-
-// Struct lưu thông tin cho mỗi client
-typedef struct {
-    int socket;
-    struct sockaddr_in address;
-    int user_id; // Để theo dõi đăng nhập cho từng người dùng
-    char username[128];
-    int is_logged_in;
-} Client;
+#define FRIEND_REQUEST_FILE "friend_requests.txt"
 
 Client *clients[MAX_CLIENTS];
 
-Client *online_clients[MAX_CLIENTS] = {0};  // List of logged-in clients
+Client *online_clients[MAX_CLIENTS] = {0};
+
+FriendPair friends[MAX_FRIENDS] = {0};
+
+int is_online(const char *username) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        // Kiểm tra nếu client ở vị trí i có username khớp và đang kết nối
+        if (clients[i]->socket > 0 && strcmp(clients[i]->username, username) == 0) {
+            return 1;  // Người dùng đang trực tuyến
+        }
+    }
+    return 0;  // Người dùng không trực tuyến
+}
+
+Client* get_client_by_socket(int client_socket) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i] && clients[i]->socket == client_socket) {
+            return clients[i];  // Return the Client pointer directly
+        }
+    }
+    return NULL;
+}
+
+Client* get_online_client_by_username(const char *username) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (online_clients[i] && strcmp(online_clients[i]->username, username) == 0) {
+            return online_clients[i];
+        }
+    }
+    return NULL;
+}
+
+// Thêm bạn vào danh sách bạn bè
+void add_friend(const char *username1, const char *username2) {
+    for (int i = 0; i < MAX_FRIENDS; i++) {
+        if (strlen(friends[i].username1) == 0) {
+            strcpy(friends[i].username1, username1);
+            strcpy(friends[i].username2, username2);
+            break;
+        }
+    }
+}
+
+// Kiểm tra xem hai người dùng có phải bạn bè không
+int is_friend(const char *username1, const char *username2) {
+    for (int i = 0; i < MAX_FRIENDS; i++) {
+        if ((strcmp(friends[i].username1, username1) == 0 && strcmp(friends[i].username2, username2) == 0) ||
+            (strcmp(friends[i].username1, username2) == 0 && strcmp(friends[i].username2, username1) == 0)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Xóa bạn khỏi danh sách bạn bè
+void remove_friend(const char *username1, const char *username2) {
+    for (int i = 0; i < MAX_FRIENDS; i++) {
+        if ((strcmp(friends[i].username1, username1) == 0 && strcmp(friends[i].username2, username2) == 0) ||
+            (strcmp(friends[i].username1, username2) == 0 && strcmp(friends[i].username2, username1) == 0)) {
+            memset(&friends[i], 0, sizeof(FriendPair)); // Xóa bạn khỏi danh sách
+            break;
+        }
+    }
+}
+
+// Xử lý yêu cầu chấp nhận kết bạn
+void handle_accept_friend_request(int client_socket, const char *payload) {
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    Client *client = get_client_by_socket(client_socket); // Hàm giả định trả về client từ socket
+
+    if (client && !is_friend(client->username, friend_username)) {
+        add_friend(client->username, friend_username);
+
+        // Gửi thông báo cho người gửi lời mời
+        Client *friend_client = get_online_client_by_username(friend_username); // Hàm trả về client theo username
+        if (friend_client) {
+            Message response = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)client->username, strlen(client->username));
+            send_message(friend_client->socket, &response);
+        }
+    }
+}
+
+// Xử lý yêu cầu từ chối kết bạn
+void handle_decline_friend_request(int client_socket, const char *payload) {
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    Client *client = get_client_by_socket(client_socket);
+
+    if (client) {
+        Client *friend_client = get_online_client_by_username(friend_username);
+        if (friend_client) {
+            Message response = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)client->username, strlen(client->username));
+            send_message(friend_client->socket, &response);
+        }
+    }
+}
+
+// Xử lý yêu cầu hủy kết bạn
+void handle_remove_friend(int client_socket, const char *payload) {
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    Client *client = get_client_by_socket(client_socket);
+    if (client && is_friend(client->username, friend_username)) {
+        remove_friend(client->username, friend_username);
+
+        // Thông báo cho cả hai bên về việc hủy kết bạn
+        Client *friend_client = get_online_client_by_username(friend_username);
+        if (friend_client) {
+            Message response = create_message(MSG_FRIEND_REMOVED, (uint8_t *)client->username, strlen(client->username));
+            send_message(friend_client->socket, &response);
+        }
+    }
+}
+
+// Xử lý yêu cầu lấy danh sách bạn bè
+void handle_get_friends_list(int client_socket) {
+    Client *client = get_client_by_socket(client_socket);
+    if (client) {
+        char friends_list[1024] = {0};
+        
+        Message response = create_message(MSG_FRIENDS_LIST, (uint8_t *)friends_list, strlen(friends_list));
+        send_message(client_socket, &response);
+    }
+}
 
 // Add client to online list
 void add_online_client(Client *client) {
@@ -128,6 +248,17 @@ int save_account(const char *username, const char *password) {
     fprintf(file, "%s:%s\n", username, password);
     fclose(file);
     return 1;
+}
+
+void save_friend_request(const char *from_username, const char *to_username) {
+    FILE *file = fopen(FRIEND_REQUEST_FILE, "a");
+    if (!file) {
+        perror("Failed to open friend requests file");
+        return;
+    }
+
+    fprintf(file, "%s:%s\n", from_username, to_username);
+    fclose(file);
 }
 
 // Hàm xử lý yêu cầu đăng ký từ client
@@ -240,6 +371,49 @@ void handle_login(int client_socket, const char *payload) {
     }
 }
 
+void handle_friend_request(int client_socket, const char *payload) {
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    Client *client = get_client_by_socket(client_socket);
+    if (client) {
+        // Check if the friend exists and is online
+        if (is_online(friend_username)) {
+            // Send the friend request to the friend
+            Client *friend_client = get_online_client_by_username(friend_username);
+            if (friend_client) {
+                Message friend_request_msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)client->username, strlen(client->username));
+                send_message(friend_client->socket, &friend_request_msg);
+            }
+            save_friend_request(client->username, friend_username);
+        }
+    }
+}
+
+void handle_see_friend_request(int client_socket) {
+    Client *client = get_client_by_socket(client_socket);
+    if (client) {
+        FILE *file = fopen(FRIEND_REQUEST_FILE, "r");
+        if (!file) {
+            perror("Failed to open friend requests file");
+            return;
+        }
+        printf("read file\n");
+
+        char line[256];
+        while (fgets(line, sizeof(line), file)) {
+            char *from_username = strtok(line, ":");
+            char *to_username = strtok(NULL, "\n");
+            if (from_username && strcmp(to_username, client->username) == 0) {
+                Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)from_username, strlen(from_username));
+                send_message(client_socket, &friend_request_msg);
+            }
+        }
+
+        fclose(file);
+    }
+}
+
 void *handle_client(void *arg) {
     Client *client = (Client *)arg;
     Message message;
@@ -253,8 +427,53 @@ void *handle_client(void *arg) {
             case MSG_LOGIN:
                 handle_login(client->socket, (char *)message.payload);
                 break;
-            case MSG_PRIVATE_MSG:
-                printf("Private message received\n");
+            case MSG_PRIVATE_MSG: {
+                // payload định dạng: <username_nhan>:<noi_dung>
+                char receiver_username[128], message_content[512];
+                sscanf((char *)message.payload, "%127[^:]:%511s", receiver_username, message_content);
+
+                // Tìm người nhận trong danh sách online_clients
+                for (int i = 0; i < MAX_CLIENTS; i++) {
+                    if (online_clients[i] && strcmp(online_clients[i]->username, receiver_username) == 0) {
+                        // Gửi tin nhắn cho người nhận
+                        Message msg = create_message(MSG_PRIVATE_MSG, (uint8_t *)message_content, strlen(message_content));
+                        send_message(online_clients[i]->socket, &msg);
+                        break;
+                    }
+                }
+                break;
+            }
+            case MSG_FRIEND_REQUEST: {
+                // payload định dạng: <username_nhan>
+                char friend_username[128];
+                sscanf((char *)message.payload, "%127s", friend_username);
+
+                // Tìm người nhận trong danh sách online_clients
+                for (int i = 0; i < MAX_CLIENTS; i++) {
+                    if (online_clients[i] && strcmp(online_clients[i]->username, friend_username) == 0) {
+                        Message friend_request_msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)client->username, strlen(client->username));
+                        send_message(online_clients[i]->socket, &friend_request_msg);
+                        // Save to friend request file
+                        save_friend_request(client->username, friend_username);
+                        break;
+                    }
+                }
+                break;
+            }
+            case MSG_FRIEND_REQUEST_ACCEPTED:
+                handle_accept_friend_request(client->socket, (char *)message.payload);
+                break;
+            case MSG_FRIEND_REQUEST_DECLINED:
+                handle_decline_friend_request(client->socket, (char *)message.payload);
+                break;
+            case MSG_FRIEND_REMOVED:
+                handle_remove_friend(client->socket, (char *)message.payload);
+                break;
+            case MSG_FRIENDS_LIST:
+                handle_get_friends_list(client->socket);
+                break;
+            case MSG_FRIEND_REQUEST_LIST: 
+                handle_see_friend_request(client->socket);
                 break;
             case MSG_DISCONNECT:
                 printf("User disconnecting\n");
