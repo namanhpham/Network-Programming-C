@@ -10,6 +10,7 @@
 #define SERVER_PORT 8080
 
 int is_logged_in = 0;
+pthread_mutex_t login_mutex = PTHREAD_MUTEX_INITIALIZER; // Initialize mutex
 
 // Function to continuously receive messages from the server
 void *receive_messages(void *arg) {
@@ -24,6 +25,7 @@ void *receive_messages(void *arg) {
         }
 
         // Process received message
+        pthread_mutex_lock(&login_mutex); // Lock mutex before updating is_logged_in
         switch (msg.type) {
             case RESP_SUCCESS:
                 printf("Login successful!\n");
@@ -31,14 +33,28 @@ void *receive_messages(void *arg) {
                 break;
             case RESP_FAILURE:
                 printf("Login or registration failed.\n");
+                is_logged_in = 0;
                 break;
             case MSG_ONLINE_USERS:
                 printf("Online users: %s\n", (char *)msg.payload);
                 break;
+            case MSG_FRIEND_REQUEST: {
+                printf("You have friend request from: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_FRIENDS_LIST: {
+                printf("Friend requests: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_FRIEND_REQUEST_LIST: {
+                printf("Friend requests: %s\n", (char *)msg.payload);
+                break;
+            }
             default:
                 printf("Unknown message type received.\n");
                 break;
         }
+        pthread_mutex_unlock(&login_mutex); // Unlock after updating
     }
     return NULL;
 }
@@ -71,7 +87,6 @@ int connect_to_server() {
     return sockfd;
 }
 
-// Hàm đăng ký
 // Hàm đăng ký
 void register_user(int sockfd) {
     char username[128], password[128];
@@ -116,15 +131,46 @@ void login_user(int sockfd) {
         perror("Login failed");
         return;
     }
-    is_logged_in = 1;
+
+    // Delay to allow `receive_messages` to update `is_logged_in`
+    struct timespec delay = {0, 200000000L};  // 200ms
+    nanosleep(&delay, NULL);
+
     return;
+}
+
+void disconnect(int sockfd) {
+    Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to send disconnect message");
+    }
+}
+
+void send_friend_request(int sockfd) {
+    char friend_username[128];
+    printf("Enter friend username: ");
+    scanf("%127s", friend_username);
+
+    char payload[256];
+    snprintf(payload, sizeof(payload), "%s", friend_username);
+
+    Message msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)payload, strlen(payload));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to send friend request");
+    }
+}
+
+void see_friend_requests(int sockfd) {
+    Message msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)"Friend requests", 15);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to see friend requests");
+    }
 }
 
 int main() {
     int sockfd = connect_to_server();
     pthread_t recv_thread;
 
-    // Create a thread to receive messages from the server
     if (pthread_create(&recv_thread, NULL, receive_messages, &sockfd) != 0) {
         perror("Failed to create receive thread");
         close(sockfd);
@@ -133,40 +179,60 @@ int main() {
 
     int command;
     while (1) {
-        if(is_logged_in) {
-            printf("Enter command (3: send message, 4: exit): ");
+        pthread_mutex_lock(&login_mutex);
+        int logged_in = is_logged_in;
+        pthread_mutex_unlock(&login_mutex);
+
+        if (logged_in) {
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
+        printf("main: is_logged_in = %d\n", logged_in);
+
         scanf("%d", &command);
-        // Xóa bộ đệm nhập liệu
-        while (getchar() != '\n'); // Xóa tất cả ký tự dư trong buffer cho đến khi gặp '\n'
+        while (getchar() != '\n'); // Clear input buffer
 
         switch (command) {
             case 1:
-                if(is_logged_in) {
+                pthread_mutex_lock(&login_mutex);
+                if (is_logged_in) {
                     printf("You must logout first\n");
+                    pthread_mutex_unlock(&login_mutex);
                     break;
                 }
+                pthread_mutex_unlock(&login_mutex);
                 register_user(sockfd);
                 break;
             case 2:
-                if(is_logged_in) {
+                pthread_mutex_lock(&login_mutex);
+                if (is_logged_in) {
                     printf("You are already logged in\n");
+                    pthread_mutex_unlock(&login_mutex);
                     break;
                 }
+                pthread_mutex_unlock(&login_mutex);
                 login_user(sockfd);
                 break;
             case 3:
-                if(!is_logged_in) {
+                pthread_mutex_lock(&login_mutex);
+                if (!is_logged_in) {
                     printf("You must login first\n");
+                    pthread_mutex_unlock(&login_mutex);
                     break;
                 }
+                pthread_mutex_unlock(&login_mutex);
                 send_message_example(sockfd);
                 break;
             case 4:
-                close(sockfd);
+                disconnect(sockfd);
                 return 0;
+            case 5:
+                send_friend_request(sockfd);
+                break;
+            case 6:
+                see_friend_requests(sockfd);
+                break;
             default:
                 printf("Unknown command\n");
         }

@@ -24,12 +24,17 @@
 #define MSG_OFFLINE_MSG          0x10  // Gửi tin nhắn offline
 #define MSG_LOG_ACTIVITY         0x11  // Ghi log hoạt động
 #define MSG_STATUS_UPDATE        0x12  // Cập nhật trạng thái online/offline
+#define MSG_ONLINE_USERS         0x13  // Danh sách người dùng đang online
+#define MSG_FRIEND_REQUEST_ACCEPTED 0x14  // Thông báo chấp nhận lời mời kết bạn
+#define MSG_FRIEND_REQUEST_DECLINED 0x15  // Thông báo từ chối lời mời kết bạn
+#define MSG_FRIEND_REQUEST_LIST  0x16  // Danh sách lời mời kết bạn
+#define MSG_FRIEND_REMOVED       0x17  // Thông báo hủy kết bạn
+#define MSG_FRIENDS_LIST         0x18  // Danh sách bạn bè
 
 // Mã phản hồi (Response Codes)
 #define RESP_SUCCESS             0x20  // Thông điệp thành công
 #define RESP_FAILURE             0x21  // Thông điệp thất bại
 #define RESP_FRIEND_LIST         0x22  // Danh sách bạn bè và trạng thái
-#define MSG_ONLINE_USERS         0x23  // Danh sách người dùng đang online
 
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)
@@ -77,6 +82,20 @@ typedef struct {
     uint8_t type;           // Loại thông điệp (Message Type)
     uint8_t payload[256];   // Dữ liệu của thông điệp (tối đa 256 bytes)
 } Message;
+
+// Struct lưu thông tin cho mỗi client
+typedef struct {
+    int socket;
+    struct sockaddr_in address;
+    int user_id; // Để theo dõi đăng nhập cho từng người dùng
+    char username[128];
+    int is_logged_in;
+} Client;
+
+typedef struct {
+    char username1[128];
+    char username2[128];
+} FriendPair;
 
 // Hàm để tạo thông điệp
 Message create_message(uint8_t type, const uint8_t *payload, size_t payload_size);
