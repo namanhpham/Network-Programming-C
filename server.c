@@ -5,12 +5,22 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "protocol.c"
+#include <libpq-fe.h>
 
+#define DB_CONN_INFO "host=localhost dbname=ltm user=postgres password=postgres"
 #define PORT 8080
 #define MAX_CLIENTS 10
 #define MAX_FRIENDS 100  // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
 #define ACCOUNTS_FILE "accounts.txt"
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
+
+typedef struct {
+    char name[128];
+    Client *members[MAX_CLIENTS];
+} Group;
+
+Group *groups[MAX_CLIENTS] = {0};
+
 
 Client *clients[MAX_CLIENTS];
 
@@ -370,6 +380,47 @@ void handle_login(int client_socket, const char *payload) {
         send_message(client_socket, &response);
     }
 }
+void handle_group_message(Client *client, const char *group_name, const char *message) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (groups[i] && strcmp(groups[i]->name, group_name) == 0) {
+            for (int j = 0; j < MAX_CLIENTS; j++) {
+                if (groups[i]->members[j] && groups[i]->members[j] != client) {
+                    Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)message, strlen(message));
+                    send_message(groups[i]->members[j]->socket, &msg);
+                }
+            }
+            return;
+        }
+    }
+}
+
+void handle_create_group(Client *client, const char *group_name) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (groups[i] == NULL) {
+            groups[i] = malloc(sizeof(Group));
+            strncpy(groups[i]->name, group_name, sizeof(groups[i]->name));
+            groups[i]->members[0] = client;
+            printf("Group '%s' created by %s\n", group_name, client->username);
+            return;
+        }
+    }
+}
+
+void handle_join_group(Client *client, const char *group_name) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (groups[i] && strcmp(groups[i]->name, group_name) == 0) {
+            for (int j = 0; j < MAX_CLIENTS; j++) {
+                if (groups[i]->members[j] == NULL) {
+                    groups[i]->members[j] = client;
+                    printf("%s joined group '%s'\n", client->username, group_name);
+                    return;
+                }
+            }
+        }
+    }
+    printf("Group '%s' not found.\n", group_name);
+}
+
 
 void handle_friend_request(int client_socket, const char *payload) {
     char friend_username[128];
@@ -478,6 +529,19 @@ void *handle_client(void *arg) {
             case MSG_DISCONNECT:
                 printf("User disconnecting\n");
                 goto cleanup;
+            case MSG_CREATE_GROUP:
+                handle_create_group(client, (char *)message.payload);
+                break;
+            case MSG_JOIN_GROUP:
+                handle_join_group(client, (char *)message.payload);
+                break;
+            case MSG_GROUP_MSG: {
+                char *group_name = strtok((char *)message.payload, ":");
+                char *msg = strtok(NULL, "");
+                handle_group_message(client, group_name, msg);
+                break;
+            }
+
         }
     }
 
@@ -503,6 +567,60 @@ cleanup:
 
 // Khởi tạo server và chấp nhận kết nối
 int main() {
+    PGconn *conn;
+
+    // Connect to the database
+    conn = PQconnectdb(DB_CONN_INFO);
+    if (PQstatus(conn) != CONNECTION_OK) {
+        fprintf(stderr, "Connection to database failed: %s\n", PQerrorMessage(conn));
+        PQfinish(conn);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Connected to the PostgreSQL database.\n");
+    printf("Welcome to the login/register system.\n");
+
+// TEST DB
+// // Create a table
+//     PGresult *res = PQexec(conn, "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(255), age INT)");
+//     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+//         fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
+//         PQclear(res);
+//         PQfinish(conn);
+//         exit(EXIT_FAILURE);
+//     }
+//     PQclear(res);
+
+//     // Insert data
+//     res = PQexec(conn, "INSERT INTO users (name, age) VALUES ('Alice', 30), ('Bob', 25)");
+//     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+//         fprintf(stderr, "INSERT failed: %s", PQerrorMessage(conn));
+//         PQclear(res);
+//         PQfinish(conn);
+//         exit(EXIT_FAILURE);
+//     }
+//     PQclear(res);
+
+//     // Fetch data
+//     res = PQexec(conn, "SELECT id, name, age FROM users");
+//     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+//         fprintf(stderr, "SELECT failed: %s", PQerrorMessage(conn));
+//         PQclear(res);
+//         PQfinish(conn);
+//         exit(EXIT_FAILURE);
+//     }
+
+//     // Print fetched data
+//     int rows = PQntuples(res);
+//     for (int i = 0; i < rows; i++) {
+//         printf("ID: %s, Name: %s, Age: %s\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
+//     }
+
+//     PQclear(res);
+//     PQfinish(conn);
+
+//     printf("Done!\n");
+//     return EXIT_SUCCESS;
 
     check_and_create_accounts_file();
 
