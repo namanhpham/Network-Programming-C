@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include "network_utils.h"
-#include "user_management.h"
-#include "message_handling.h"
-#include "friendship.h"
+#include "network_utils/network_utils.h"
+#include "user_management/user_management.h"
+#include "message_handling/message_handling.h"
+#include "friendship/friendship.h"
 #include "protocol.h"
 #include "common.h"
 
@@ -16,42 +16,42 @@
 #define ACCOUNTS_FILE "accounts.txt"
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
 
-Client *get_client_by_socket(int client_socket)
-{
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if (clients[i] && clients[i]->socket == client_socket)
-        {
-            return clients[i]; // Return the Client pointer directly
-        }
-    }
-    return NULL;
-}
+// Client *get_client_by_socket(int client_socket)
+// {
+//     for (int i = 0; i < MAX_CLIENTS; i++)
+//     {
+//         if (clients[i] && clients[i]->socket == client_socket)
+//         {
+//             return clients[i]; // Return the Client pointer directly
+//         }
+//     }
+//     return NULL;
+// }
 
-Client *get_online_client_by_username(const char *username)
-{
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if (online_clients[i] && strcmp(online_clients[i]->username, username) == 0)
-        {
-            return online_clients[i];
-        }
-    }
-    return NULL;
-}
+// Client *get_online_client_by_username(const char *username)
+// {
+//     for (int i = 0; i < MAX_CLIENTS; i++)
+//     {
+//         if (online_clients[i] && strcmp(online_clients[i]->username, username) == 0)
+//         {
+//             return online_clients[i];
+//         }
+//     }
+//     return NULL;
+// }
 
 // Add client to online list
-void add_online_client(Client *client)
-{
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if (online_clients[i] == NULL)
-        {
-            online_clients[i] = client;
-            break;
-        }
-    }
-}
+// void add_online_client(Client *client)
+// {
+//     for (int i = 0; i < MAX_CLIENTS; i++)
+//     {
+//         if (online_clients[i] == NULL)
+//         {
+//             online_clients[i] = client;
+//             break;
+//         }
+//     }
+// }
 
 // Remove client from online list
 void remove_online_client(Client *client)
@@ -66,31 +66,31 @@ void remove_online_client(Client *client)
     }
 }
 
-void send_online_users_list(int client_socket)
-{
-    char online_users[1024] = {0};
+// void send_online_users_list(int client_socket)
+// {
+//     char online_users[1024] = {0};
 
-    // Create a comma-separated list of online usernames
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if (online_clients[i] && online_clients[i]->is_logged_in)
-        {
-            strcat(online_users, online_clients[i]->username);
-            strcat(online_users, ",");
-        }
-    }
+//     // Create a comma-separated list of online usernames
+//     for (int i = 0; i < MAX_CLIENTS; i++)
+//     {
+//         if (online_clients[i] && online_clients[i]->is_logged_in)
+//         {
+//             strcat(online_users, online_clients[i]->username);
+//             strcat(online_users, ",");
+//         }
+//     }
 
-    // Remove the trailing comma, if any
-    size_t len = strlen(online_users);
-    if (len > 0)
-    {
-        online_users[len - 1] = '\0';
-    }
+//     // Remove the trailing comma, if any
+//     size_t len = strlen(online_users);
+//     if (len > 0)
+//     {
+//         online_users[len - 1] = '\0';
+//     }
 
-    // Send the list to the specified client
-    Message msg = create_message(MSG_ONLINE_USERS, (uint8_t *)online_users, strlen(online_users));
-    send_message(client_socket, &msg);
-}
+//     // Send the list to the specified client
+//     Message msg = create_message(MSG_ONLINE_USERS, (uint8_t *)online_users, strlen(online_users));
+//     send_message(client_socket, &msg);
+// }
 
 // Hàm để thêm client vào danh sách
 void add_client(Client *client)
@@ -131,44 +131,44 @@ void check_and_create_accounts_file()
 }
 
 // Hàm kiểm tra tên đăng nhập đã tồn tại trong file hay chưa
-int username_exists(const char *username)
-{
-    FILE *file = fopen(ACCOUNTS_FILE, "r");
-    if (!file)
-    {
-        perror("Failed to open accounts file");
-        return 0;
-    }
+// int username_exists(const char *username)
+// {
+//     FILE *file = fopen(ACCOUNTS_FILE, "r");
+//     if (!file)
+//     {
+//         perror("Failed to open accounts file");
+//         return 0;
+//     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file))
-    {
-        char *stored_username = strtok(line, ":");
-        if (stored_username && strcmp(stored_username, username) == 0)
-        {
-            fclose(file);
-            return 1; // Username đã tồn tại
-        }
-    }
+//     char line[256];
+//     while (fgets(line, sizeof(line), file))
+//     {
+//         char *stored_username = strtok(line, ":");
+//         if (stored_username && strcmp(stored_username, username) == 0)
+//         {
+//             fclose(file);
+//             return 1; // Username đã tồn tại
+//         }
+//     }
 
-    fclose(file);
-    return 0; // Username chưa tồn tại
-}
+//     fclose(file);
+//     return 0; // Username chưa tồn tại
+// }
 
 // Hàm lưu thông tin tài khoản mới vào file
-int save_account(const char *username, const char *password)
-{
-    FILE *file = fopen(ACCOUNTS_FILE, "a");
-    if (!file)
-    {
-        perror("Failed to open accounts file");
-        return 0;
-    }
+// int save_account(const char *username, const char *password)
+// {
+//     FILE *file = fopen(ACCOUNTS_FILE, "a");
+//     if (!file)
+//     {
+//         perror("Failed to open accounts file");
+//         return 0;
+//     }
 
-    fprintf(file, "%s:%s\n", username, password);
-    fclose(file);
-    return 1;
-}
+//     fprintf(file, "%s:%s\n", username, password);
+//     fclose(file);
+//     return 1;
+// }
 
 void save_friend_request(const char *from_username, const char *to_username)
 {
@@ -185,51 +185,51 @@ void save_friend_request(const char *from_username, const char *to_username)
 
 // Function to validate credentials from the file
 // Helper function to trim newline and other whitespace characters
-void trim_newline(char *str)
-{
-    size_t len = strlen(str);
-    if (len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r'))
-    {
-        str[len - 1] = '\0';
-    }
-}
+// void trim_newline(char *str)
+// {
+//     size_t len = strlen(str);
+//     if (len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r'))
+//     {
+//         str[len - 1] = '\0';
+//     }
+// }
 
 // Function to validate credentials from the file
-int validate_credentials(const char *username, const char *password)
-{
-    FILE *file = fopen(ACCOUNTS_FILE, "r");
-    if (!file)
-    {
-        perror("Failed to open accounts file");
-        return 0;
-    }
+// int validate_credentials(const char *username, const char *password)
+// {
+//     FILE *file = fopen(ACCOUNTS_FILE, "r");
+//     if (!file)
+//     {
+//         perror("Failed to open accounts file");
+//         return 0;
+//     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file))
-    {
-        // Split username and password
-        char *stored_username = strtok(line, ":");
-        char *stored_password = strtok(NULL, "\n");
+//     char line[256];
+//     while (fgets(line, sizeof(line), file))
+//     {
+//         // Split username and password
+//         char *stored_username = strtok(line, ":");
+//         char *stored_password = strtok(NULL, "\n");
 
-        // Trim any newline or whitespace characters
-        if (stored_username)
-            trim_newline(stored_username);
-        if (stored_password)
-            trim_newline(stored_password);
+//         // Trim any newline or whitespace characters
+//         if (stored_username)
+//             trim_newline(stored_username);
+//         if (stored_password)
+//             trim_newline(stored_password);
 
-        // Check if credentials match
-        if (stored_username && stored_password &&
-            strcmp(stored_username, username) == 0 &&
-            strcmp(stored_password, password) == 0)
-        {
-            fclose(file);
-            return 1; // Login successful
-        }
-    }
+//         // Check if credentials match
+//         if (stored_username && stored_password &&
+//             strcmp(stored_username, username) == 0 &&
+//             strcmp(stored_password, password) == 0)
+//         {
+//             fclose(file);
+//             return 1; // Login successful
+//         }
+//     }
 
-    fclose(file);
-    return 0; // Login failed
-}
+//     fclose(file);
+//     return 0; // Login failed
+// }
 
 void handle_friend_request(int client_socket, const char *payload)
 {

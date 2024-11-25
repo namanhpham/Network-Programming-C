@@ -2,8 +2,8 @@
 #include <string.h>
 #include "friendship.h"
 #include "../protocol.h" // File này sẽ chứa hàm send_message, create_message, v.v. nếu cần
-#include "../protocol.c"
 #include "../common.h"
+#include <stdio.h>
 
 FriendPair friends[MAX_FRIENDS] = {0};
 

@@ -14,7 +14,7 @@ gcc -o "$1" \
     friendship/friendship.c \
     message_handling/message_handling.c \
     network_utils/network_utils.c \
-    protocol/protocol.c \
+    protocol.c \
     user_management/user_management.c \
     -lpthread  # Linking the pthread library as it seems your server might be using threads
 

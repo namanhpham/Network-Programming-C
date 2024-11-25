@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "user_management.h"
+#include <netinet/in.h>
 #include "../protocol.h" // Assuming protocol handling is also separated
 #include "../common.h"
 
