@@ -1,3 +1,4 @@
+## Install 
 ### 1. Install libpq
 For Mac 
 ```bash
@@ -30,5 +31,13 @@ Or again use pkg-config:
 $ pkg-config --libs libpq
 -L/usr/local/pgsql/lib -lpq
 ```
-
+## Usage
+### 1. For server
+```bash
+$ ./exec.sh server
+```     
+### 2. For client
+```bash
+$ ./exec.sh client
+```     
 
