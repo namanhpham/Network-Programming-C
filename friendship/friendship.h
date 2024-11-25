@@ -2,13 +2,8 @@
 #ifndef FRIENDSHIP_H
 #define FRIENDSHIP_H
 
-#include "protocol.c"  // Giả sử file protocol.c chứa định nghĩa của struct Message và các mã sự kiện
+#include "../protocol.h" // File này sẽ chứa hàm send_message, create_message, v.v. nếu cần
 #include <stdint.h>
-
-typedef struct {
-    char username1[128];
-    char username2[128];
-} FriendPair;
 
 #define MAX_FRIENDS 100  // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
 
