@@ -13,6 +13,10 @@ SRCS = common.c \
        user_management/user_management.c \
 	   server.c 
 
+ifneq (,$(findstring server.c,$(SRCS)))
+  CFLAGS += -lpq
+endif
+
 # Output binary
 TARGET = server
 
