@@ -139,6 +139,49 @@ void login_user(int sockfd) {
     return;
 }
 
+void create_group(int sockfd) {
+    char group_name[128];
+    printf("Enter group name: ");
+    scanf("%127s", group_name);
+
+    Message msg = create_message(MSG_CREATE_GROUP, (uint8_t *)group_name, strlen(group_name));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Create group failed");
+    } else {
+        printf("Group created successfully.\n");
+    }
+}
+
+void join_group(int sockfd) {
+    char group_name[128];
+    printf("Enter group name to join: ");
+    scanf("%127s", group_name);
+
+    Message msg = create_message(MSG_JOIN_GROUP, (uint8_t *)group_name, strlen(group_name));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Join group failed");
+    } else {
+        printf("Joined group successfully.\n");
+    }
+}
+
+void send_group_message(int sockfd) {
+    char group_name[128], message[256];
+    printf("Enter group name: ");
+    scanf("%127s", group_name);
+    getchar(); // Clear input buffer
+    printf("Enter message: ");
+    fgets(message, sizeof(message), stdin);
+
+    char payload[512];
+    snprintf(payload, sizeof(payload), "%s:%s", group_name, message);
+    Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)payload, strlen(payload));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Send group message failed");
+    }
+}
+
+
 void disconnect(int sockfd) {
     Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
     if (send_message(sockfd, &msg) < 0) {
@@ -184,7 +227,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
@@ -233,6 +276,17 @@ int main() {
             case 6:
                 see_friend_requests(sockfd);
                 break;
+
+            case 7:
+                create_group(sockfd);
+                break;
+            case 8:
+                join_group(sockfd);
+                break;
+            case 9:
+                send_group_message(sockfd);
+                break;
+            
             default:
                 printf("Unknown command\n");
         }

@@ -32,6 +32,9 @@
 #define MSG_FRIEND_REMOVED       0x17  // Thông báo hủy kết bạn
 #define MSG_FRIENDS_LIST         0x18  // Danh sách bạn bè
 
+#define MSG_JOIN_GROUP 0x30//Tham gia nhóm chat.
+#define MSG_LIST_GROUPS 0x31//Lấy danh sách các nhóm chat.
+
 // Mã phản hồi (Response Codes)
 #define RESP_SUCCESS             0x20  // Thông điệp thành công
 #define RESP_FAILURE             0x21  // Thông điệp thất bại
