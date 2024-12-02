@@ -3,6 +3,7 @@ CC = gcc
 
 # Compiler flags
 CFLAGS = -Wall -pthread
+LDFLAGS = -lpq
 
 # Source files
 SRCS = common.c \
@@ -27,7 +28,7 @@ all: $(TARGET)
 
 # Build the executable
 $(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
 # Clean up build artifacts
 clean:

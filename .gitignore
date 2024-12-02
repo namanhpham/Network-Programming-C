@@ -2,3 +2,5 @@
 accounts.txt
 *.o
 .env
+server
+client
