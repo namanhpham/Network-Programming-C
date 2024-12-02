@@ -8,6 +8,7 @@
 #include "user_management/user_management.h"
 #include "message_handling/message_handling.h"
 #include "friendship/friendship.h"
+#include "group/group.h" // Include the group header file
 #include "protocol.h"
 #include "common.h"
 #include <libpq-fe.h>
@@ -19,12 +20,6 @@
 #define ACCOUNTS_FILE "accounts.txt"
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
 #define CONNECTION_STRING_LENGTH 512
-
-typedef struct {
-    char name[128];
-    Client *members[MAX_CLIENTS];
-} Group;
-Group *groups[MAX_CLIENTS] = {0};
 
 // Remove client from online list
 void remove_online_client(Client *client)
@@ -77,110 +72,6 @@ void check_and_create_accounts_file()
     fclose(file);
 }
 
-void save_friend_request(const char *from_username, const char *to_username)
-{
-    FILE *file = fopen(FRIEND_REQUEST_FILE, "a");
-    if (!file)
-    {
-        perror("Failed to open friend requests file");
-        return;
-    }
-
-    fprintf(file, "%s:%s\n", from_username, to_username);
-    fclose(file);
-}
-
-
-void handle_friend_request(int client_socket, const char *payload)
-{
-    char friend_username[128];
-    sscanf(payload, "%127s", friend_username);
-
-    Client *client = get_client_by_socket(client_socket);
-    if (client)
-    {
-        // Check if the friend exists and is online
-        if (is_online(friend_username))
-        {
-            // Send the friend request to the friend
-            Client *friend_client = get_online_client_by_username(friend_username);
-            if (friend_client)
-            {
-                Message friend_request_msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)client->username, strlen(client->username));
-                send_message(friend_client->socket, &friend_request_msg);
-            }
-            save_friend_request(client->username, friend_username);
-        }
-    }
-}
-
-void handle_see_friend_request(int client_socket)
-{
-    Client *client = get_client_by_socket(client_socket);
-    if (client)
-    {
-        FILE *file = fopen(FRIEND_REQUEST_FILE, "r");
-        if (!file)
-        {
-            perror("Failed to open friend requests file");
-            return;
-        }
-        printf("read file\n");
-
-        char line[256];
-        while (fgets(line, sizeof(line), file))
-        {
-            char *from_username = strtok(line, ":");
-            char *to_username = strtok(NULL, "\n");
-            if (from_username && strcmp(to_username, client->username) == 0)
-            {
-                Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)from_username, strlen(from_username));
-                send_message(client_socket, &friend_request_msg);
-            }
-        }
-
-        fclose(file);
-    }
-}
-void handle_group_message(Client *client, const char *group_name, const char *message) {
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (groups[i] && strcmp(groups[i]->name, group_name) == 0) {
-            for (int j = 0; j < MAX_CLIENTS; j++) {
-                if (groups[i]->members[j] && groups[i]->members[j] != client) {
-                    Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)message, strlen(message));
-                    send_message(groups[i]->members[j]->socket, &msg);
-                }
-            }
-            return;
-        }
-    }
-}
-void handle_create_group(Client *client, const char *group_name) {
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (groups[i] == NULL) {
-            groups[i] = malloc(sizeof(Group));
-            strncpy(groups[i]->name, group_name, sizeof(groups[i]->name));
-            groups[i]->members[0] = client;
-            printf("Group '%s' created by %s\n", group_name, client->username);
-            return;
-        }
-    }
-}
-void handle_join_group(Client *client, const char *group_name) {
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (groups[i] && strcmp(groups[i]->name, group_name) == 0) {
-            for (int j = 0; j < MAX_CLIENTS; j++) {
-                if (groups[i]->members[j] == NULL) {
-                    groups[i]->members[j] = client;
-                    printf("%s joined group '%s'\n", client->username, group_name);
-                    return;
-                }
-            }
-        }
-    }
-    printf("Group '%s' not found.\n", group_name);
-}
-
 void *handle_client(void *arg)
 {
     Client *client = (Client *)arg;
@@ -217,25 +108,8 @@ void *handle_client(void *arg)
             break;
         }
         case MSG_FRIEND_REQUEST:
-        {
-            // payload định dạng: <username_nhan>
-            char friend_username[128];
-            sscanf((char *)message.payload, "%127s", friend_username);
-
-            // Tìm người nhận trong danh sách online_clients
-            for (int i = 0; i < MAX_CLIENTS; i++)
-            {
-                if (online_clients[i] && strcmp(online_clients[i]->username, friend_username) == 0)
-                {
-                    Message friend_request_msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)client->username, strlen(client->username));
-                    send_message(online_clients[i]->socket, &friend_request_msg);
-                    // Save to friend request file
-                    save_friend_request(client->username, friend_username);
-                    break;
-                }
-            }
+            handle_friend_request(client, (char *)message.payload);
             break;
-        }
         case MSG_FRIEND_REQUEST_ACCEPTED:
             handle_accept_friend_request(client->socket, (char *)message.payload);
             break;
@@ -255,8 +129,8 @@ void *handle_client(void *arg)
             printf("User disconnecting\n");
             goto cleanup;
         case MSG_CREATE_GROUP:
-                handle_create_group(client, (char *)message.payload);
-                break;
+            handle_create_group(client, (char *)message.payload);
+            break;
         case MSG_JOIN_GROUP:
             handle_join_group(client, (char *)message.payload);
             break;

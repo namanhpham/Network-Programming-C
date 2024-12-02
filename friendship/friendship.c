@@ -5,6 +5,8 @@
 #include "../common.h"
 #include <stdio.h>
 
+#define FRIEND_REQUEST_FILE "friend_requests.txt"
+
 FriendPair friends[MAX_FRIENDS] = {0};
 
 int is_online(const char *username)
@@ -156,5 +158,64 @@ void handle_get_friends_list(int client_socket)
 
         Message response = create_message(MSG_FRIENDS_LIST, (uint8_t *)friends_list, strlen(friends_list));
         send_message(client_socket, &response);
+    }
+}
+
+void save_friend_request(const char *from_username, const char *to_username)
+{
+    FILE *file = fopen(FRIEND_REQUEST_FILE, "a");
+    if (!file)
+    {
+        perror("Failed to open friend requests file");
+        return;
+    }
+
+    fprintf(file, "%s:%s\n", from_username, to_username);
+    fclose(file);
+}
+
+void handle_friend_request(Client *client, const char *payload)
+{
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (online_clients[i] && strcmp(online_clients[i]->username, friend_username) == 0)
+        {
+            Message friend_request_msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)client->username, strlen(client->username));
+            send_message(online_clients[i]->socket, &friend_request_msg);
+            save_friend_request(client->username, friend_username);
+            break;
+        }
+    }
+}
+
+void handle_see_friend_request(int client_socket)
+{
+    Client *client = get_client_by_socket(client_socket);
+    if (client)
+    {
+        FILE *file = fopen(FRIEND_REQUEST_FILE, "r");
+        if (!file)
+        {
+            perror("Failed to open friend requests file");
+            return;
+        }
+        printf("read file\n");
+
+        char line[256];
+        while (fgets(line, sizeof(line), file))
+        {
+            char *from_username = strtok(line, ":");
+            char *to_username = strtok(NULL, "\n");
+            if (from_username && strcmp(to_username, client->username) == 0)
+            {
+                Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)from_username, strlen(from_username));
+                send_message(client_socket, &friend_request_msg);
+            }
+        }
+
+        fclose(file);
     }
 }

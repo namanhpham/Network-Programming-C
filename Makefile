@@ -12,6 +12,7 @@ SRCS = common.c \
        protocol.c \
        user_management/user_management.c \
 	   utils.c \
+	   group/group.c \
 	   server.c 
 
 ifneq (,$(findstring server.c,$(SRCS)))
