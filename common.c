@@ -1,4 +1,4 @@
-#include "common.h" // Include nếu kiểu Client được định nghĩa ở đây, hoặc định nghĩa Client nếu chưa có.
+#include "common.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -29,41 +29,50 @@ Client *get_online_client_by_username(const char *username)
     return NULL;
 }
 
-int username_exists(const char *username)
+int username_exists(PGconn *conn, const char *username)
 {
-    FILE *file = fopen(ACCOUNTS_FILE, "r");
-    if (!file)
+    const char *paramValues[1] = {username};
+    PGresult *res = PQexecParams(conn,
+                                 "SELECT 1 FROM users WHERE name = $1",
+                                 1,       /* one param */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
     {
-        perror("Failed to open accounts file");
+        fprintf(stderr, "Username existence check failed: %s", PQerrorMessage(conn));
+        PQclear(res);
         return 0;
     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file))
-    {
-        char *stored_username = strtok(line, ":");
-        if (stored_username && strcmp(stored_username, username) == 0)
-        {
-            fclose(file);
-            return 1; // Username đã tồn tại
-        }
-    }
-
-    fclose(file);
-    return 0; // Username chưa tồn tại
+    int exists = PQntuples(res) > 0;
+    PQclear(res);
+    return exists;
 }
 
-int save_account(const char *username, const char *password)
+int save_account(PGconn *conn, const char *username, const char *password)
 {
-    FILE *file = fopen(ACCOUNTS_FILE, "a");
-    if (!file)
+    const char *paramValues[2] = {username, password};
+    PGresult *res = PQexecParams(conn,
+                                 "INSERT INTO users (name, password) VALUES ($1, $2)",
+                                 2,       /* two params */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
     {
-        perror("Failed to open accounts file");
+        fprintf(stderr, "Save account failed: %s", PQerrorMessage(conn));
+        PQclear(res);
         return 0;
     }
 
-    fprintf(file, "%s:%s\n", username, password);
-    fclose(file);
+    PQclear(res);
     return 1;
 }
 
@@ -76,40 +85,28 @@ void trim_newline(char *str)
     }
 }
 
-int validate_credentials(const char *username, const char *password)
+int validate_credentials(PGconn *conn, const char *username, const char *password)
 {
-    FILE *file = fopen(ACCOUNTS_FILE, "r");
-    if (!file)
+    const char *paramValues[2] = {username, password};
+    PGresult *res = PQexecParams(conn,
+                                 "SELECT 1 FROM users WHERE name = $1 AND password = $2",
+                                 2,       /* two params */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
     {
-        perror("Failed to open accounts file");
+        fprintf(stderr, "Validate credentials failed: %s", PQerrorMessage(conn));
+        PQclear(res);
         return 0;
     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file))
-    {
-        // Split username and password
-        char *stored_username = strtok(line, ":");
-        char *stored_password = strtok(NULL, "\n");
-
-        // Trim any newline or whitespace characters
-        if (stored_username)
-            trim_newline(stored_username);
-        if (stored_password)
-            trim_newline(stored_password);
-
-        // Check if credentials match
-        if (stored_username && stored_password &&
-            strcmp(stored_username, username) == 0 &&
-            strcmp(stored_password, password) == 0)
-        {
-            fclose(file);
-            return 1; // Login successful
-        }
-    }
-
-    fclose(file);
-    return 0; // Login failed
+    int valid = PQntuples(res) > 0;
+    PQclear(res);
+    return valid;
 }
 
 void add_online_client(Client *client)

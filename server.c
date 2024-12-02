@@ -77,15 +77,24 @@ void *handle_client(void *arg)
     Message message;
     ssize_t received;
 
+    const char *db_url = getenv("DB_URL");
+    PGconn *conn = PQconnectdb(db_url);
+    if (PQstatus(conn) != CONNECTION_OK)
+    {
+        fprintf(stderr, "Connection to database failed: %s\n", PQerrorMessage(conn));
+        PQfinish(conn);
+        pthread_exit(NULL);
+    }
+
     while ((received = receive_message(client->socket, &message)) > 0)
     {
         switch (message.type)
         {
         case MSG_REGISTER:
-            handle_register(client->socket, (char *)message.payload);
+            handle_register(client->socket, (char *)message.payload, conn);
             break;
         case MSG_LOGIN:
-            handle_login(client->socket, (char *)message.payload);
+            handle_login(client->socket, (char *)message.payload, conn);
             break;
         case MSG_PRIVATE_MSG:
         {
@@ -126,6 +135,7 @@ void *handle_client(void *arg)
             break;
         case MSG_DISCONNECT:
             printf("User disconnecting\n");
+            handle_logout(client->socket, conn); // Update last_offline_at
             goto cleanup;
         case MSG_CREATE_GROUP:
             handle_create_group(client, (char *)message.payload);
@@ -158,6 +168,7 @@ cleanup:
         }
     }
 
+    PQfinish(conn);
     close(client->socket);
     remove_client(client->socket);
     free(client);
@@ -168,27 +179,17 @@ cleanup:
 int main()
 {   
     load_env_file(".env");
-   // Access the required environment variables
-    const char *db_host = getenv("DB_HOST");
-    const char *db_port = getenv("DB_PORT");
-    const char *db_name = getenv("DB_NAME");
-    const char *db_user = getenv("DB_USER");
-    const char *db_pass = getenv("DB_PASSWORD");
+    // Access the required environment variables
+    const char *db_url = getenv("DB_URL");
 
-    fprintf(stdout, "DB_HOST: %s\n", db_host);
-    if (!db_host || !db_port || !db_name || !db_user || !db_pass) {
-        fprintf(stderr, "Missing required environment variables\n");
+    fprintf(stdout, "DB_URL: %s\n", db_url);
+    if (!db_url) {
+        fprintf(stderr, "Missing required environment variable DB_URL\n");
         return 1;
     }
 
-    // Build the connection string
-    char conninfo[CONNECTION_STRING_LENGTH];
-    snprintf(conninfo, sizeof(conninfo),
-             "host=%s port=%s dbname=%s user=%s password=%s",
-             db_host, db_port, db_name, db_user, db_pass);
-
     // Connect to the PostgreSQL database
-    PGconn *conn = PQconnectdb(conninfo);    
+    PGconn *conn = PQconnectdb(db_url);
     if (PQstatus(conn) != CONNECTION_OK) {
         fprintf(stderr, "Connection to database failed: %s\n", PQerrorMessage(conn));
         PQfinish(conn);
@@ -197,7 +198,7 @@ int main()
 
     printf("Connected to the PostgreSQL database.\n");
     printf("Welcome to the login/register system.\n");
-    
+
     init_db(conn);
     check_and_create_accounts_file();
 

@@ -210,6 +210,18 @@ void see_friend_requests(int sockfd) {
     }
 }
 
+void logout_user(int sockfd) {
+    Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Logout", 6);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Logout failed");
+    } else {
+        pthread_mutex_lock(&login_mutex);
+        is_logged_in = 0;
+        pthread_mutex_unlock(&login_mutex);
+        printf("Logged out successfully.\n");
+    }
+}
+
 int main() {
     int sockfd = connect_to_server();
     pthread_t recv_thread;
@@ -227,7 +239,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
@@ -285,6 +297,16 @@ int main() {
                 break;
             case 9:
                 send_group_message(sockfd);
+                break;
+            case 10:
+                pthread_mutex_lock(&login_mutex);
+                if (!is_logged_in) {
+                    printf("You are not logged in\n");
+                    pthread_mutex_unlock(&login_mutex);
+                    break;
+                }
+                pthread_mutex_unlock(&login_mutex);
+                logout_user(sockfd);
                 break;
             
             default:
