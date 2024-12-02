@@ -98,6 +98,7 @@ void init_db(PGconn *conn)
         "CREATE TABLE IF NOT EXISTS users ("
         "id UUID PRIMARY KEY DEFAULT gen_random_uuid(), "
         "name TEXT NOT NULL, "
+        "password TEXT NOT NULL, " // Add password column
         "last_online_at TIMESTAMP, "
         "last_offline_at TIMESTAMP, "
         "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);";

@@ -6,75 +6,97 @@
 #include "../common.h"
 
 // Hàm xử lý yêu cầu đăng ký từ client
-void handle_register(int client_socket, const char *payload)
+void handle_register(int client_socket, const char *payload, PGconn *conn)
 {
     char username[128], password[128];
     sscanf(payload, "%127[^:]:%127s", username, password); // Tách username và password
 
-    if (username_exists(username))
+    if (username_exists(conn, username))
     {
-        // Gửi phản hồi nếu tên người dùng đã tồn tại
-        printf("Username %s already exists\n", username);
-        Message response = {RESP_FAILURE, {0}};
-        send_message(client_socket, &response);
+        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Username already exists", 23);
+        send_message(client_socket, &msg);
+        return;
+    }
+
+    if (save_account(conn, username, password))
+    {
+        Message msg = create_message(RESP_SUCCESS, (uint8_t *)"Registration successful", 23);
+        send_message(client_socket, &msg);
     }
     else
     {
-        // Lưu tài khoản mới và gửi phản hồi thành công
-        if (save_account(username, password))
-        {
-            printf("User %s registered successfully\n", username);
-            Message response = {RESP_SUCCESS, {0}};
-            send_message(client_socket, &response);
-        }
-        else
-        {
-            // Gửi phản hồi thất bại nếu có lỗi khi lưu
-            printf("Failed to register user %s\n", username);
-            Message response = {RESP_FAILURE, {0}};
-            send_message(client_socket, &response);
-        }
+        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Registration failed", 19);
+        send_message(client_socket, &msg);
     }
 }
 
-void handle_login(int client_socket, const char *payload)
+void handle_login(int client_socket, const char *payload, PGconn *conn)
 {
     char username[128], password[128];
     sscanf(payload, "%127[^:]:%127s", username, password); // Split username and password
 
-    // Check if the user is already logged in
-    for (int i = 0; i < MAX_CLIENTS; i++)
+    if (validate_credentials(conn, username, password))
     {
-        if (online_clients[i] && strcmp(online_clients[i]->username, username) == 0)
+        Client *client = get_client_by_socket(client_socket);
+        if (client)
         {
-            printf("User %s is already logged in\n", username);
-            Message response = {RESP_FAILURE, {0}};
-            send_message(client_socket, &response);
-            return;
-        }
-    }
+            strcpy(client->username, username);
+            client->is_logged_in = 1;
+            add_online_client(client);
 
-    // Validate credentials
-    if (validate_credentials(username, password))
-    {
-        printf("User %s logged in successfully\n", username);
+            // Update last_online_at
+            const char *paramValues[1] = {username};
+            PGresult *res = PQexecParams(conn,
+                                         "UPDATE users SET last_online_at = CURRENT_TIMESTAMP WHERE name = $1",
+                                         1,       /* one param */
+                                         NULL,    /* let the backend deduce param type */
+                                         paramValues,
+                                         NULL,    /* don't need param lengths since text */
+                                         NULL,    /* default to all text params */
+                                         0);      /* ask for binary results */
+            PQclear(res);
 
-        // Update client's status and add to online list
-        for (int i = 0; i < MAX_CLIENTS; i++)
-        {
-            if (clients[i] && clients[i]->socket == client_socket)
+            Message msg = create_message(RESP_SUCCESS, (uint8_t *)"Login successful", 16);
+            send_message(client_socket, &msg);
+
+            // Notify all clients of the updated online user list
+            for (int i = 0; i < MAX_CLIENTS; i++)
             {
-                strcpy(clients[i]->username, username);
-                clients[i]->is_logged_in = 1;
-                add_online_client(clients[i]);
-                break;
+                if (online_clients[i] && online_clients[i]->is_logged_in)
+                {
+                    send_online_users_list(online_clients[i]->socket);
+                }
             }
         }
+    }
+    else
+    {
+        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Invalid credentials", 19);
+        send_message(client_socket, &msg);
+    }
+}
 
-        Message response = {RESP_SUCCESS, {0}};
-        send_message(client_socket, &response);
+void handle_logout(int client_socket, PGconn *conn)
+{
+    Client *client = get_client_by_socket(client_socket);
+    if (client && client->is_logged_in)
+    {
+        // Update last_offline_at
+        const char *paramValues[1] = {client->username};
+        PGresult *res = PQexecParams(conn,
+                                     "UPDATE users SET last_offline_at = CURRENT_TIMESTAMP WHERE name = $1",
+                                     1,       /* one param */
+                                     NULL,    /* let the backend deduce param type */
+                                     paramValues,
+                                     NULL,    /* don't need param lengths since text */
+                                     NULL,    /* default to all text params */
+                                     0);      /* ask for binary results */
+        PQclear(res);
 
-        // Send the updated online users list to all clients
+        client->is_logged_in = 0;
+        remove_online_client(client);
+
+        // Notify all clients of the updated online user list
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
             if (online_clients[i] && online_clients[i]->is_logged_in)
@@ -83,15 +105,4 @@ void handle_login(int client_socket, const char *payload)
             }
         }
     }
-    else
-    {
-        printf("Invalid credentials for user %s\n", username);
-        Message response = {RESP_FAILURE, {0}};
-        send_message(client_socket, &response);
-    }
-}
-
-void handle_logout(int client_socket)
-{
-    // Logout logic
 }
