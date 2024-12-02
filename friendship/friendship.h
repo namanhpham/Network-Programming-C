@@ -18,5 +18,8 @@ void handle_decline_friend_request(int client_socket, const char *payload);
 void handle_remove_friend(int client_socket, const char *payload);
 void handle_get_friends_list(int client_socket);
 int is_online(const char *username);
+void handle_friend_request(Client *client, const char *payload);
+void handle_see_friend_request(int client_socket);
+void save_friend_request(const char *from_username, const char *to_username);
 
 #endif
