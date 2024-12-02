@@ -1,3 +1,4 @@
 /.vscode
 accounts.txt
 *.o
+.env

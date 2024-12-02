@@ -11,12 +11,14 @@
 #include "protocol.h"
 #include "common.h"
 #include <libpq-fe.h>
-
-#define DB_CONN_INFO "host=localhost dbname=ltm user=postgres password=postgres"
+#include "utils.h"
+//import from .env
+// #define DB_CONN_INFO "host=dpg-ct6iiudumphs739ctvjg-a dbname=chat_icaa user=chat_icaa_user password=9HNIxXXeFuVmo5jTn3Fe6csxClZph8gL"
 #define PORT 8080
 #define MAX_FRIENDS 100 // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
 #define ACCOUNTS_FILE "accounts.txt"
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
+#define CONNECTION_STRING_LENGTH 512
 
 typedef struct {
     char name[128];
@@ -291,11 +293,29 @@ cleanup:
 
 // Khởi tạo server và chấp nhận kết nối
 int main()
-{
-    PGconn *conn;
+{   
+    load_env_file(".env");
+   // Access the required environment variables
+    const char *db_host = getenv("DB_HOST");
+    const char *db_port = getenv("DB_PORT");
+    const char *db_name = getenv("DB_NAME");
+    const char *db_user = getenv("DB_USER");
+    const char *db_pass = getenv("DB_PASSWORD");
 
-    // Connect to the database
-    conn = PQconnectdb(DB_CONN_INFO);
+    fprintf(stdout, "DB_HOST: %s\n", db_host);
+    if (!db_host || !db_port || !db_name || !db_user || !db_pass) {
+        fprintf(stderr, "Missing required environment variables\n");
+        return 1;
+    }
+
+    // Build the connection string
+    char conninfo[CONNECTION_STRING_LENGTH];
+    snprintf(conninfo, sizeof(conninfo),
+             "host=%s port=%s dbname=%s user=%s password=%s",
+             db_host, db_port, db_name, db_user, db_pass);
+
+    // Connect to the PostgreSQL database
+    PGconn *conn = PQconnectdb(conninfo);    
     if (PQstatus(conn) != CONNECTION_OK) {
         fprintf(stderr, "Connection to database failed: %s\n", PQerrorMessage(conn));
         PQfinish(conn);
@@ -306,14 +326,14 @@ int main()
     printf("Welcome to the login/register system.\n");
     // TEST DB
 // // Create a table
-//     PGresult *res = PQexec(conn, "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(255), age INT)");
-//     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-//         fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
-//         PQclear(res);
-//         PQfinish(conn);
-//         exit(EXIT_FAILURE);
-//     }
-//     PQclear(res);
+    PGresult *res = PQexec(conn, "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(255), age INT)");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        PQfinish(conn);
+        exit(EXIT_FAILURE);
+    }
+    PQclear(res);
 
 //     // Insert data
 //     res = PQexec(conn, "INSERT INTO users (name, age) VALUES ('Alice', 30), ('Bob', 25)");
