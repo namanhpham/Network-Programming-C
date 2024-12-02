@@ -16,7 +16,6 @@
 
 #define PORT 8080
 #define MAX_FRIENDS 100 // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
-#define ACCOUNTS_FILE "accounts.txt"
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
 #define CONNECTION_STRING_LENGTH 512
 
@@ -57,18 +56,6 @@ void remove_client(int socket)
             break;
         }
     }
-}
-
-// Hàm kiểm tra và tạo file accounts.txt nếu chưa tồn tại
-void check_and_create_accounts_file()
-{
-    FILE *file = fopen(ACCOUNTS_FILE, "a"); // Mở ở chế độ append, tạo file nếu chưa tồn tại
-    if (!file)
-    {
-        perror("Failed to open or create accounts file");
-        exit(EXIT_FAILURE);
-    }
-    fclose(file);
 }
 
 void *handle_client(void *arg)
@@ -200,7 +187,6 @@ int main()
     printf("Welcome to the login/register system.\n");
 
     init_db(conn);
-    check_and_create_accounts_file();
 
     int server_fd, new_socket;
     struct sockaddr_in address;
