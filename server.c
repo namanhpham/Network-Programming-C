@@ -13,8 +13,7 @@
 #include "common.h"
 #include <libpq-fe.h>
 #include "utils.h"
-//import from .env
-// #define DB_CONN_INFO "host=dpg-ct6iiudumphs739ctvjg-a dbname=chat_icaa user=chat_icaa_user password=9HNIxXXeFuVmo5jTn3Fe6csxClZph8gL"
+
 #define PORT 8080
 #define MAX_FRIENDS 100 // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
 #define ACCOUNTS_FILE "accounts.txt"
@@ -198,47 +197,8 @@ int main()
 
     printf("Connected to the PostgreSQL database.\n");
     printf("Welcome to the login/register system.\n");
-    // TEST DB
-// // Create a table
-    PGresult *res = PQexec(conn, "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name VARCHAR(255), age INT)");
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        PQfinish(conn);
-        exit(EXIT_FAILURE);
-    }
-    PQclear(res);
-
-//     // Insert data
-//     res = PQexec(conn, "INSERT INTO users (name, age) VALUES ('Alice', 30), ('Bob', 25)");
-//     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-//         fprintf(stderr, "INSERT failed: %s", PQerrorMessage(conn));
-//         PQclear(res);
-//         PQfinish(conn);
-//         exit(EXIT_FAILURE);
-//     }
-//     PQclear(res);
-
-//     // Fetch data
-//     res = PQexec(conn, "SELECT id, name, age FROM users");
-//     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-//         fprintf(stderr, "SELECT failed: %s", PQerrorMessage(conn));
-//         PQclear(res);
-//         PQfinish(conn);
-//         exit(EXIT_FAILURE);
-//     }
-
-//     // Print fetched data
-//     int rows = PQntuples(res);
-//     for (int i = 0; i < rows; i++) {
-//         printf("ID: %s, Name: %s, Age: %s\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1), PQgetvalue(res, i, 2));
-//     }
-
-//     PQclear(res);
-//     PQfinish(conn);
-
-//     printf("Done!\n");
-//     return EXIT_SUCCESS;
+    
+    init_db(conn);
     check_and_create_accounts_file();
 
     int server_fd, new_socket;
