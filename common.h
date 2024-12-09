@@ -5,7 +5,6 @@
 #include <libpq-fe.h>
 
 #define MAX_CLIENTS 10
-#define ACCOUNTS_FILE "accounts.txt"
 
 // Khai báo các mảng clients.
 extern Client *clients[MAX_CLIENTS];
