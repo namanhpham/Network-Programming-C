@@ -9,6 +9,7 @@
 #include "message_handling/message_handling.h"
 #include "friendship/friendship.h"
 #include "group/group.h" // Include the group header file
+#include "private_message/private_message.h"
 #include "protocol.h"
 #include "common.h"
 #include <libpq-fe.h>
@@ -71,24 +72,8 @@ void *handle_client(void *arg)
             handle_login(client->socket, (char *)message.payload, conn);
             break;
         case MSG_PRIVATE_MSG:
-        {
-            // payload định dạng: <username_nhan>:<noi_dung>
-            char receiver_username[128], message_content[512];
-            sscanf((char *)message.payload, "%127[^:]:%511s", receiver_username, message_content);
-
-            // Tìm người nhận trong danh sách online_clients
-            for (int i = 0; i < MAX_CLIENTS; i++)
-            {
-                if (online_clients[i] && strcmp(online_clients[i]->username, receiver_username) == 0)
-                {
-                    // Gửi tin nhắn cho người nhận
-                    Message msg = create_message(MSG_PRIVATE_MSG, (uint8_t *)message_content, strlen(message_content));
-                    send_message(online_clients[i]->socket, &msg);
-                    break;
-                }
-            }
+            handle_private_message(client, (char *)message.payload, conn);
             break;
-        }
         case MSG_FRIEND_REQUEST:
             handle_friend_request(client, (char *)message.payload);
             break;
@@ -121,7 +106,8 @@ void *handle_client(void *arg)
         case MSG_JOIN_GROUP:
             handle_join_group(client, (char *)message.payload);
             break;
-        case MSG_GROUP_MSG: {
+        case MSG_GROUP_MSG:
+        {
             char *group_name = strtok((char *)message.payload, ":");
             char *msg = strtok(NULL, "");
             handle_group_message(client, group_name, msg);
@@ -155,20 +141,22 @@ cleanup:
 
 // Khởi tạo server và chấp nhận kết nối
 int main()
-{   
+{
     load_env_file(".env");
     // Access the required environment variables
     const char *db_url = getenv("DB_URL");
 
     fprintf(stdout, "DB_URL: %s\n", db_url);
-    if (!db_url) {
+    if (!db_url)
+    {
         fprintf(stderr, "Missing required environment variable DB_URL\n");
         return 1;
     }
 
     // Connect to the PostgreSQL database
     PGconn *conn = PQconnectdb(db_url);
-    if (PQstatus(conn) != CONNECTION_OK) {
+    if (PQstatus(conn) != CONNECTION_OK)
+    {
         fprintf(stderr, "Connection to database failed: %s\n", PQerrorMessage(conn));
         PQfinish(conn);
         exit(EXIT_FAILURE);

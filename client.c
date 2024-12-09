@@ -13,12 +13,15 @@ int is_logged_in = 0;
 pthread_mutex_t login_mutex = PTHREAD_MUTEX_INITIALIZER; // Initialize mutex
 
 // Function to continuously receive messages from the server
-void *receive_messages(void *arg) {
+void *receive_messages(void *arg)
+{
     int sockfd = *(int *)arg;
     Message msg;
 
-    while (1) {
-        if (receive_message(sockfd, &msg) <= 0) {
+    while (1)
+    {
+        if (receive_message(sockfd, &msg) <= 0)
+        {
             printf("Server disconnected\n");
             close(sockfd);
             exit(EXIT_FAILURE);
@@ -26,36 +29,37 @@ void *receive_messages(void *arg) {
 
         // Process received message
         pthread_mutex_lock(&login_mutex); // Lock mutex before updating is_logged_in
-        switch (msg.type) {
-            case RESP_REGISTER_SUCCESS:
-                printf("Registration successful!\n");
-                break;
-            case RESP_SUCCESS:
-                printf("Login successful!\n");
-                is_logged_in = 1;
-                break;
-            case RESP_FAILURE:
-                printf("Login or registration failed.\n");
-                is_logged_in = 0;
-                break;
-            case MSG_ONLINE_USERS:
-                printf("Online users: %s\n", (char *)msg.payload);
-                break;
-            case MSG_FRIEND_REQUEST: {
-                printf("You have friend request from: %s\n", (char *)msg.payload);
-                break;
-            }
-            case MSG_FRIENDS_LIST: {
-                printf("Friend requests: %s\n", (char *)msg.payload);
-                break;
-            }
-            case MSG_FRIEND_REQUEST_LIST: {
-                printf("Friend requests: %s\n", (char *)msg.payload);
-                break;
-            }
-            default:
-                printf("Unknown message type received.\n");
-                break;
+        switch (msg.type)
+        {
+        case RESP_SUCCESS:
+            printf("Login successful!\n");
+            is_logged_in = 1;
+            break;
+        case RESP_FAILURE:
+            printf("Login or registration failed.\n");
+            is_logged_in = 0;
+            break;
+        case MSG_ONLINE_USERS:
+            printf("Online users: %s\n", (char *)msg.payload);
+            break;
+        case MSG_FRIEND_REQUEST:
+        {
+            printf("You have friend request from: %s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_FRIENDS_LIST:
+        {
+            printf("Friend requests: %s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_FRIEND_REQUEST_LIST:
+        {
+            printf("Friend requests: %s\n", (char *)msg.payload);
+            break;
+        }
+        default:
+            printf("Unknown message type received.\n");
+            break;
         }
         pthread_mutex_unlock(&login_mutex); // Unlock after updating
     }
@@ -63,11 +67,13 @@ void *receive_messages(void *arg) {
 }
 
 // Hàm kết nối đến server
-int connect_to_server() {
+int connect_to_server()
+{
     int sockfd;
     struct sockaddr_in server_addr;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
@@ -75,13 +81,15 @@ int connect_to_server() {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
 
-    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0)
+    {
         perror("Invalid address");
         close(sockfd);
         exit(EXIT_FAILURE);
     }
 
-    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
         perror("Connection failed");
         close(sockfd);
         exit(EXIT_FAILURE);
@@ -91,9 +99,10 @@ int connect_to_server() {
 }
 
 // Hàm đăng ký
-void register_user(int sockfd) {
+void register_user(int sockfd)
+{
     char username[128], password[128];
-    
+
     // Yêu cầu người dùng nhập tên đăng nhập và mật khẩu
     printf("Enter username for registration: ");
     scanf("%127s", username);
@@ -106,15 +115,17 @@ void register_user(int sockfd) {
 
     // Tạo thông điệp đăng ký và gửi tới server
     Message msg = create_message(MSG_REGISTER, (uint8_t *)payload, strlen(payload));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Registration failed");
     }
 }
 
 // Hàm đăng nhập
-void login_user(int sockfd) {
+void login_user(int sockfd)
+{
     char username[128], password[128];
-    
+
     // Prompt the user for username and password
     printf("Enter username for login: ");
     scanf("%127s", username);
@@ -130,45 +141,55 @@ void login_user(int sockfd) {
     // printf("Message type: %d, Message payload: '%s'\n", msg.type, (char *)msg.payload);
 
     // Send the message to the server and check for errors
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Login failed");
         return;
     }
 
     // Delay to allow `receive_messages` to update `is_logged_in`
-    struct timespec delay = {0, 500000000L};  // 500ms
+    struct timespec delay = {0, 200000000L}; // 200ms
     nanosleep(&delay, NULL);
 
     return;
 }
 
-void create_group(int sockfd) {
+void create_group(int sockfd)
+{
     char group_name[128];
     printf("Enter group name: ");
     scanf("%127s", group_name);
 
     Message msg = create_message(MSG_CREATE_GROUP, (uint8_t *)group_name, strlen(group_name));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Create group failed");
-    } else {
+    }
+    else
+    {
         printf("Group created successfully.\n");
     }
 }
 
-void join_group(int sockfd) {
+void join_group(int sockfd)
+{
     char group_name[128];
     printf("Enter group name to join: ");
     scanf("%127s", group_name);
 
     Message msg = create_message(MSG_JOIN_GROUP, (uint8_t *)group_name, strlen(group_name));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Join group failed");
-    } else {
+    }
+    else
+    {
         printf("Joined group successfully.\n");
     }
 }
 
-void send_group_message(int sockfd) {
+void send_group_message(int sockfd)
+{
     char group_name[128], message[256];
     printf("Enter group name: ");
     scanf("%127s", group_name);
@@ -179,20 +200,41 @@ void send_group_message(int sockfd) {
     char payload[512];
     snprintf(payload, sizeof(payload), "%s:%s", group_name, message);
     Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)payload, strlen(payload));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Send group message failed");
     }
 }
 
+void send_private_message(int sockfd)
+{
+    char receiver_username[128], message_content[512];
+    printf("Enter receiver username: ");
+    scanf("%127s", receiver_username);
+    getchar(); // Clear input buffer
+    printf("Enter message: ");
+    fgets(message_content, sizeof(message_content), stdin);
 
-void disconnect(int sockfd) {
+    char payload[640];
+    snprintf(payload, sizeof(payload), "%s:%s", receiver_username, message_content);
+    Message msg = create_message(MSG_PRIVATE_MSG, (uint8_t *)payload, strlen(payload));
+    if (send_message(sockfd, &msg) < 0)
+    {
+        perror("Send private message failed");
+    }
+}
+
+void disconnect(int sockfd)
+{
     Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to send disconnect message");
     }
 }
 
-void send_friend_request(int sockfd) {
+void send_friend_request(int sockfd)
+{
     char friend_username[128];
     printf("Enter friend username: ");
     scanf("%127s", friend_username);
@@ -201,23 +243,30 @@ void send_friend_request(int sockfd) {
     snprintf(payload, sizeof(payload), "%s", friend_username);
 
     Message msg = create_message(MSG_FRIEND_REQUEST, (uint8_t *)payload, strlen(payload));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to send friend request");
     }
 }
 
-void see_friend_requests(int sockfd) {
+void see_friend_requests(int sockfd)
+{
     Message msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)"Friend requests", 15);
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to see friend requests");
     }
 }
 
-void logout_user(int sockfd) {
+void logout_user(int sockfd)
+{
     Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout", 6);
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Logout failed");
-    } else {
+    }
+    else
+    {
         pthread_mutex_lock(&login_mutex);
         is_logged_in = 0;
         pthread_mutex_unlock(&login_mutex);
@@ -225,95 +274,117 @@ void logout_user(int sockfd) {
     }
 }
 
-int main() {
+int main()
+{
     int sockfd = connect_to_server();
     pthread_t recv_thread;
 
-    if (pthread_create(&recv_thread, NULL, receive_messages, &sockfd) != 0) {
+    if (pthread_create(&recv_thread, NULL, receive_messages, &sockfd) != 0)
+    {
         perror("Failed to create receive thread");
         close(sockfd);
         return EXIT_FAILURE;
     }
 
     int command;
-    while (1) {
+    while (1)
+    {
         pthread_mutex_lock(&login_mutex);
         int logged_in = is_logged_in;
         pthread_mutex_unlock(&login_mutex);
 
-        if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout): ");
-        } else {
+        if (logged_in)
+        {
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: send private message): ");
+        }
+        else
+        {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
         printf("main: is_logged_in = %d\n", logged_in);
 
         scanf("%d", &command);
-        while (getchar() != '\n'); // Clear input buffer
+        while (getchar() != '\n')
+            ; // Clear input buffer
 
-        switch (command) {
-            case 1:
-                pthread_mutex_lock(&login_mutex);
-                if (is_logged_in) {
-                    printf("You must logout first\n");
-                    pthread_mutex_unlock(&login_mutex);
-                    break;
-                }
+        switch (command)
+        {
+        case 1:
+            pthread_mutex_lock(&login_mutex);
+            if (is_logged_in)
+            {
+                printf("You must logout first\n");
                 pthread_mutex_unlock(&login_mutex);
-                register_user(sockfd);
                 break;
-            case 2:
-                pthread_mutex_lock(&login_mutex);
-                if (is_logged_in) {
-                    printf("You are already logged in\n");
-                    pthread_mutex_unlock(&login_mutex);
-                    break;
-                }
+            }
+            pthread_mutex_unlock(&login_mutex);
+            register_user(sockfd);
+            break;
+        case 2:
+            pthread_mutex_lock(&login_mutex);
+            if (is_logged_in)
+            {
+                printf("You are already logged in\n");
                 pthread_mutex_unlock(&login_mutex);
-                login_user(sockfd);
                 break;
-            case 3:
-                pthread_mutex_lock(&login_mutex);
-                if (!is_logged_in) {
-                    printf("You must login first\n");
-                    pthread_mutex_unlock(&login_mutex);
-                    break;
-                }
+            }
+            pthread_mutex_unlock(&login_mutex);
+            login_user(sockfd);
+            break;
+        case 3:
+            pthread_mutex_lock(&login_mutex);
+            if (!is_logged_in)
+            {
+                printf("You must login first\n");
                 pthread_mutex_unlock(&login_mutex);
-                send_message_example(sockfd);
                 break;
-            case 4:
-                disconnect(sockfd);
-                return 0;
-            case 5:
-                send_friend_request(sockfd);
-                break;
-            case 6:
-                see_friend_requests(sockfd);
-                break;
+            }
+            pthread_mutex_unlock(&login_mutex);
+            send_message_example(sockfd);
+            break;
+        case 4:
+            disconnect(sockfd);
+            return 0;
+        case 5:
+            send_friend_request(sockfd);
+            break;
+        case 6:
+            see_friend_requests(sockfd);
+            break;
 
-            case 7:
-                create_group(sockfd);
-                break;
-            case 8:
-                join_group(sockfd);
-                break;
-            case 9:
-                send_group_message(sockfd);
-                break;
-            case 10:
-                pthread_mutex_lock(&login_mutex);
-                if (!is_logged_in) {
-                    printf("You are not logged in\n");
-                    pthread_mutex_unlock(&login_mutex);
-                    break;
-                }
+        case 7:
+            create_group(sockfd);
+            break;
+        case 8:
+            join_group(sockfd);
+            break;
+        case 9:
+            send_group_message(sockfd);
+            break;
+        case 10:
+            pthread_mutex_lock(&login_mutex);
+            if (!is_logged_in)
+            {
+                printf("You are not logged in\n");
                 pthread_mutex_unlock(&login_mutex);
-                logout_user(sockfd);
                 break;
-            
-            default:
-                printf("Unknown command\n");
+            }
+            pthread_mutex_unlock(&login_mutex);
+            logout_user(sockfd);
+            break;
+        case 11:
+            pthread_mutex_lock(&login_mutex);
+            if (!is_logged_in)
+            {
+                printf("You must login first\n");
+                pthread_mutex_unlock(&login_mutex);
+                break;
+            }
+            pthread_mutex_unlock(&login_mutex);
+            send_private_message(sockfd);
+            break;
+        default:
+            printf("Unknown command\n");
         }
     }
 

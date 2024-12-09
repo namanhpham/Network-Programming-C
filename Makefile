@@ -12,6 +12,7 @@ SRCS = common.c \
        network_utils/network_utils.c \
        protocol.c \
        user_management/user_management.c \
+	   private_message/private_message.c \
 	   utils.c \
 	   group/group.c \
 	   server.c 
