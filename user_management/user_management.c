@@ -48,20 +48,35 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
         Client *client = get_client_by_socket(client_socket);
         if (client)
         {
-            strcpy(client->username, username);
-            client->is_logged_in = 1;
-            add_online_client(client);
-
-            // Update last_online_at
+            // Fetch user_id from the database
             const char *paramValues[1] = {username};
             PGresult *res = PQexecParams(conn,
-                                         "UPDATE users SET last_online_at = CURRENT_TIMESTAMP WHERE name = $1",
+                                         "SELECT id FROM users WHERE name = $1",
                                          1,       /* one param */
                                          NULL,    /* let the backend deduce param type */
                                          paramValues,
                                          NULL,    /* don't need param lengths since text */
                                          NULL,    /* default to all text params */
                                          0);      /* ask for binary results */
+            if (PQresultStatus(res) == PGRES_TUPLES_OK && PQntuples(res) > 0)
+            {
+                strcpy(client->user_id, PQgetvalue(res, 0, 0));
+            }
+            PQclear(res);
+
+            strcpy(client->username, username);
+            client->is_logged_in = 1;
+            add_online_client(client);
+
+            // Update last_online_at
+            res = PQexecParams(conn,
+                               "UPDATE users SET last_online_at = CURRENT_TIMESTAMP WHERE name = $1",
+                               1,       /* one param */
+                               NULL,    /* let the backend deduce param type */
+                               paramValues,
+                               NULL,    /* don't need param lengths since text */
+                               NULL,    /* default to all text params */
+                               0);      /* ask for binary results */
             PQclear(res);
 
             Message msg = create_message(RESP_SUCCESS, (uint8_t *)"Login successful", 16);
