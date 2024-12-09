@@ -20,7 +20,7 @@ void handle_register(int client_socket, const char *payload, PGconn *conn)
 
     if (save_account(conn, username, password))
     {
-        Message msg = create_message(RESP_SUCCESS, (uint8_t *)"Registration successful", 23);
+        Message msg = create_message(RESP_REGISTER_SUCCESS, (uint8_t *)"Registration successful", 23);
         send_message(client_socket, &msg);
     }
     else

@@ -39,6 +39,7 @@
 #define RESP_SUCCESS             0x20  // Thông điệp thành công
 #define RESP_FAILURE             0x21  // Thông điệp thất bại
 #define RESP_FRIEND_LIST         0x22  // Danh sách bạn bè và trạng thái
+#define RESP_REGISTER_SUCCESS    0x23  // Đăng ký tài khoản thành công
 
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)
