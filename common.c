@@ -146,3 +146,16 @@ void send_online_users_list(int client_socket)
     Message msg = create_message(MSG_ONLINE_USERS, (uint8_t *)online_users, strlen(online_users));
     send_message(client_socket, &msg);
 }
+
+// Remove client from online list
+void remove_online_client(Client *client)
+{
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (online_clients[i] == client)
+        {
+            online_clients[i] = NULL;
+            break;
+        }
+    }
+}

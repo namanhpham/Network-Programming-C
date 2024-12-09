@@ -91,7 +91,7 @@ typedef struct {
 typedef struct {
     int socket;
     struct sockaddr_in address;
-    int user_id; // Để theo dõi đăng nhập cho từng người dùng
+    char user_id[37]; // UUID as identifier
     char username[128];
     int is_logged_in;
 } Client;
