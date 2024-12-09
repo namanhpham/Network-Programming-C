@@ -27,6 +27,9 @@ void *receive_messages(void *arg) {
         // Process received message
         pthread_mutex_lock(&login_mutex); // Lock mutex before updating is_logged_in
         switch (msg.type) {
+            case RESP_REGISTER_SUCCESS:
+                printf("Registration successful!\n");
+                break;
             case RESP_SUCCESS:
                 printf("Login successful!\n");
                 is_logged_in = 1;
@@ -133,7 +136,7 @@ void login_user(int sockfd) {
     }
 
     // Delay to allow `receive_messages` to update `is_logged_in`
-    struct timespec delay = {0, 200000000L};  // 200ms
+    struct timespec delay = {0, 500000000L};  // 500ms
     nanosleep(&delay, NULL);
 
     return;
