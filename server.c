@@ -19,19 +19,6 @@
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
 #define CONNECTION_STRING_LENGTH 512
 
-// Remove client from online list
-void remove_online_client(Client *client)
-{
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if (online_clients[i] == client)
-        {
-            online_clients[i] = NULL;
-            break;
-        }
-    }
-}
-
 // Hàm để thêm client vào danh sách
 void add_client(Client *client)
 {
@@ -120,9 +107,13 @@ void *handle_client(void *arg)
         case MSG_FRIEND_REQUEST_LIST:
             handle_see_friend_request(client->socket);
             break;
+        case MSG_LOGOUT:
+            printf("User logging out\n");
+            handle_logout(client->socket, conn); // Update last_offline_at
+            break;
         case MSG_DISCONNECT:
             printf("User disconnecting\n");
-            handle_logout(client->socket, conn); // Update last_offline_at
+            handle_disconnect(client->socket, conn); // Handle client disconnection
             goto cleanup;
         case MSG_CREATE_GROUP:
             handle_create_group(client, (char *)message.payload);

@@ -37,6 +37,14 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
 
     if (validate_credentials(conn, username, password))
     {
+        Client *existing_client = get_online_client_by_username(username);
+        if (existing_client)
+        {
+            Message msg = create_message(RESP_FAILURE, (uint8_t *)"User already logged in", 22);
+            send_message(client_socket, &msg);
+            return;
+        }
+
         Client *client = get_client_by_socket(client_socket);
         if (client)
         {
@@ -77,6 +85,41 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
 }
 
 void handle_logout(int client_socket, PGconn *conn)
+{
+    Client *client = get_client_by_socket(client_socket);
+    if (client && client->is_logged_in)
+    {
+        // Update last_offline_at
+        const char *paramValues[1] = {client->username};
+        PGresult *res = PQexecParams(conn,
+                                     "UPDATE users SET last_offline_at = CURRENT_TIMESTAMP WHERE name = $1",
+                                     1,       /* one param */
+                                     NULL,    /* let the backend deduce param type */
+                                     paramValues,
+                                     NULL,    /* don't need param lengths since text */
+                                     NULL,    /* default to all text params */
+                                     0);      /* ask for binary results */
+        PQclear(res);
+
+        client->is_logged_in = 0;
+        remove_online_client(client);
+
+        // Notify all clients of the updated online user list
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if (online_clients[i] && online_clients[i]->is_logged_in)
+            {
+                send_online_users_list(online_clients[i]->socket);
+            }
+        }
+
+        // Send logout success message to the client
+        Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout successful", 17);
+        send_message(client_socket, &msg);
+    }
+}
+
+void handle_disconnect(int client_socket, PGconn *conn)
 {
     Client *client = get_client_by_socket(client_socket);
     if (client && client->is_logged_in)

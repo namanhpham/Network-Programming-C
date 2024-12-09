@@ -211,7 +211,7 @@ void see_friend_requests(int sockfd) {
 }
 
 void logout_user(int sockfd) {
-    Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Logout", 6);
+    Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout", 6);
     if (send_message(sockfd, &msg) < 0) {
         perror("Logout failed");
     } else {
