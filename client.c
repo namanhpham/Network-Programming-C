@@ -50,6 +50,14 @@ void *receive_messages(void *arg) {
                 printf("Friend requests: %s\n", (char *)msg.payload);
                 break;
             }
+            case MSG_GROUP_MSG_HISTORY: {
+                printf("Messages: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_GROUP_MSG: {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
             default:
                 printf("Unknown message type received.\n");
                 break;
@@ -181,6 +189,24 @@ void send_group_message(int sockfd) {
     }
 }
 
+void list_groups(int sockfd) {
+    Message msg = create_message(MSG_LIST_GROUPS, (uint8_t *)"List groups", 11);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to list groups");
+    }
+}
+
+void see_group_messages(int sockfd) {
+    char group_name[128];
+    printf("Enter group name to see messages: ");
+    scanf("%127s", group_name);
+
+    Message msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)group_name, strlen(group_name));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to see group messages");
+    }
+}
+
 
 void disconnect(int sockfd) {
     Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
@@ -239,7 +265,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
@@ -307,6 +333,12 @@ int main() {
                 }
                 pthread_mutex_unlock(&login_mutex);
                 logout_user(sockfd);
+                break;
+            case 11:
+                list_groups(sockfd);
+                break;
+            case 12:
+                see_group_messages(sockfd);
                 break;
             
             default:

@@ -122,6 +122,7 @@ void init_db(PGconn *conn)
         "content TEXT NOT NULL, "
         "user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
         "group_id UUID REFERENCES group_table(id) ON DELETE SET NULL, "
+        "receiver_id UUID REFERENCES users(id) ON DELETE SET NULL, "
         "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);";
 
     const char *friendship_table_create =

@@ -127,7 +127,13 @@ void *handle_client(void *arg)
             handle_group_message(client, group_name, msg);
             break;
         }
-        }
+        case MSG_LIST_GROUPS:
+            handle_list_groups(client);
+            break;
+        case MSG_GROUP_MSG_HISTORY:
+            handle_see_group_messages(client, (char *)message.payload);
+            break;      
+        }      
     }
 
 cleanup:
@@ -215,6 +221,7 @@ int main()
         Client *client = (Client *)malloc(sizeof(Client));
         client->socket = new_socket;
         client->address = address;
+        client->conn = conn;
         add_client(client);
 
         pthread_t thread;
