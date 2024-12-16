@@ -5,6 +5,7 @@
 #include <sys/types.h> // For ssize_t
 #include <stddef.h>    // For size_t
 #include <netinet/in.h>
+#include <libpq-fe.h>
 
 // Loại thông điệp (Message Types)
 #define MSG_REGISTER             0x01  // Đăng ký tài khoản
@@ -31,7 +32,7 @@
 #define MSG_FRIEND_REQUEST_LIST  0x16  // Danh sách lời mời kết bạn
 #define MSG_FRIEND_REMOVED       0x17  // Thông báo hủy kết bạn
 #define MSG_FRIENDS_LIST         0x18  // Danh sách bạn bè
-
+#define MSG_GROUP_MSG_HISTORY    0x19  // Lịch sử chat trong group
 #define MSG_JOIN_GROUP 0x30//Tham gia nhóm chat.
 #define MSG_LIST_GROUPS 0x31//Lấy danh sách các nhóm chat.
 
@@ -41,6 +42,8 @@
 #define RESP_FRIEND_LIST         0x22  // Danh sách bạn bè và trạng thái
 #define RESP_REGISTER_SUCCESS    0x23  // Đăng ký tài khoản thành công
 
+#define RESP_LEAVE_GROUP        0x33 // Thông báo rời nhóm chat
+#define RESP_REMOVE_GROUP_MEMBER 0x34 // Thông báo xóa thành viên khỏi nhóm chat
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)
 
@@ -95,6 +98,7 @@ typedef struct {
     char user_id[37]; // UUID as identifier
     char username[128];
     int is_logged_in;
+    PGconn *conn;
 } Client;
 
 typedef struct {
