@@ -230,6 +230,7 @@ int main()
         Client *client = (Client *)malloc(sizeof(Client));
         client->socket = new_socket;
         client->address = address;
+        client->conn = conn;
         add_client(client);
 
         pthread_t thread;

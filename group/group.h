@@ -3,6 +3,7 @@
 
 #include "../protocol.h" // File này sẽ chứa hàm send_message, create_message, v.v. nếu cần
 #include "../common.h"
+#define CHUNK_SIZE 512
 
 typedef struct {
     char id[128];

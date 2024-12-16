@@ -54,7 +54,7 @@ void *receive_messages(void *arg) {
                 break;
             }
             case MSG_GROUP_MSG_HISTORY: {
-                printf("Messages: %s\n", (char *)msg.payload);
+                printf("%s", (char *)msg.payload);
                 break;
             }
             case MSG_GROUP_MSG: {
@@ -238,6 +238,24 @@ void logout_user(int sockfd) {
         is_logged_in = 0;
         pthread_mutex_unlock(&login_mutex);
         printf("Logged out successfully.\n");
+    }
+}
+
+void see_group_messages(int sockfd) {
+    char group_name[128];
+    printf("Enter group name to see messages: ");
+    scanf("%127s", group_name);
+
+    Message msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)group_name, strlen(group_name));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to see group messages");
+    }
+}
+
+void list_groups(int sockfd) {
+    Message msg = create_message(MSG_LIST_GROUPS, (uint8_t *)"List groups", 11);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to list groups");
     }
 }
 

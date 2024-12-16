@@ -5,6 +5,7 @@
 #include <sys/types.h> // For ssize_t
 #include <stddef.h>    // For size_t
 #include <netinet/in.h>
+#include <libpq-fe.h>
 
 // Loại thông điệp (Message Types)
 #define MSG_REGISTER             0x01  // Đăng ký tài khoản

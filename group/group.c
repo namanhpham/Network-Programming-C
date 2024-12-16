@@ -39,9 +39,12 @@ void handle_group_message(Client *client, const char *group_name, const char *me
     }
 }
 
-void handle_create_group(Client *client, const char *group_name) {
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (groups[i] == NULL) {
+void handle_create_group(Client *client, const char *group_name)
+{
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (groups[i] == NULL)
+        {
             groups[i] = malloc(sizeof(Group));
             strncpy(groups[i]->name, group_name, sizeof(groups[i]->name));
             groups[i]->members[0] = client;
@@ -301,46 +304,32 @@ void handle_see_group_messages(Client *client, const char *group_name)
             return;
         }
 
-        // Use a dynamic buffer to avoid buffer overflow
-        char *messages = (char *)malloc(1024);
-        if (!messages)
-        {
-            fprintf(stderr, "Memory allocation failed.\n");
-            PQclear(res);
-            return;
-        }
+        char chunk[CHUNK_SIZE];
+        snprintf(chunk, CHUNK_SIZE, "Message history for group: %s\n", group_name);
+        Message initial_msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)chunk, strlen(chunk));
+        send_message(client->socket, &initial_msg);
 
-        snprintf(messages, 1024, "Message history for group: %s\n", group_name);
+        memset(chunk, 0, CHUNK_SIZE); // Clear the buffer for reuse
 
         for (int i = 0; i < PQntuples(res); i++)
         {
             const char *user_name = PQgetvalue(res, i, 0);
             const char *message_content = PQgetvalue(res, i, 1);
 
-            // Reallocate buffer if necessary
-            size_t new_size = strlen(messages) + strlen(user_name) + strlen(message_content) + 4;
-            char *new_messages = (char *)realloc(messages, new_size);
-            if (!new_messages)
-            {
-                fprintf(stderr, "Memory reallocation failed.\n");
-                free(messages);
-                PQclear(res);
-                return;
-            }
-            messages = new_messages;
+            // Format the message into the chunk
+            snprintf(chunk, CHUNK_SIZE, "%s: %s\n", user_name, message_content);
 
-            strcat(messages, user_name);
-            strcat(messages, ": ");
-            strcat(messages, message_content);
-            strcat(messages, "\n");
+            // Send the chunk
+            Message msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)chunk, strlen(chunk));
+            send_message(client->socket, &msg);
+
+            memset(chunk, 0, CHUNK_SIZE); // Clear the buffer after each send
         }
 
         PQclear(res);
 
-        Message msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)messages, strlen(messages));
-        send_message(client->socket, &msg);
-
-        free(messages);
+        Message end_msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)chunk, strlen(chunk));
+        send_message(client->socket, &end_msg);
     }
     else
     {
@@ -413,7 +402,7 @@ void handle_remove_group_member(Client *client, const char *group_name, const ch
             if (group->members[j])
             {
                 Client *member = group->members[j];
-              
+
                 char message[1024] = "";
                 snprintf(message, sizeof(message), "%s removed from group '%s' by %s\n", member_username, group_name, client->username);
                 Message msg = create_message(RESP_REMOVE_GROUP_MEMBER, (uint8_t *)message, strlen(message));
