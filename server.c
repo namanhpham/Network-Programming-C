@@ -44,7 +44,6 @@ void remove_client(int socket)
         }
     }
 }
-
 void *handle_client(void *arg)
 {
     Client *client = (Client *)arg;
@@ -127,7 +126,23 @@ void *handle_client(void *arg)
             handle_group_message(client, group_name, msg);
             break;
         }
+        case MSG_LIST_GROUPS:
+            handle_list_groups(client);
+            break;
+        case MSG_GROUP_MSG_HISTORY:
+            handle_see_group_messages(client, (char *)message.payload);
+            break;      
+        case MSG_LEAVE_GROUP:
+            handle_leave_group(client, (char *)message.payload);
+            break;
+        case MSG_REMOVE_GROUP_MEMBER:{
+            char *group_name = strtok((char *)message.payload, ":");
+            char *member = strtok(NULL, "");
+            handle_remove_group_member(client, group_name, member);
+            break;
         }
+        }      
+        
     }
 
 cleanup:

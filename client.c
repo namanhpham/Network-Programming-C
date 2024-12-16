@@ -53,6 +53,22 @@ void *receive_messages(void *arg) {
                 printf("Friend requests: %s\n", (char *)msg.payload);
                 break;
             }
+            case MSG_GROUP_MSG_HISTORY: {
+                printf("Messages: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_GROUP_MSG: {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
+            case RESP_LEAVE_GROUP: {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
+            case RESP_REMOVE_GROUP_MEMBER: {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
             default:
                 printf("Unknown message type received.\n");
                 break;
@@ -225,6 +241,32 @@ void logout_user(int sockfd) {
     }
 }
 
+void leave_group(int sockfd) {
+    char group_name[128];
+    printf("Enter group name to leave: ");
+    scanf("%127s", group_name);
+
+    Message msg = create_message(MSG_LEAVE_GROUP, (uint8_t *)group_name, strlen(group_name));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to leave group");
+    }
+}
+
+void remove_group_members(int sockfd) {
+    char group_name[128], member_username[128];
+    printf("Enter group name: ");
+    scanf("%127s", group_name);
+    printf("Enter member username: ");
+    scanf("%127s", member_username);
+
+    char payload[256];
+    snprintf(payload, sizeof(payload), "%s:%s", group_name, member_username);
+
+    Message msg = create_message(MSG_REMOVE_GROUP_MEMBER, (uint8_t *)payload, strlen(payload));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to remove group members");
+    }
+}
 int main() {
     int sockfd = connect_to_server();
     pthread_t recv_thread;
@@ -242,7 +284,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
@@ -310,6 +352,18 @@ int main() {
                 }
                 pthread_mutex_unlock(&login_mutex);
                 logout_user(sockfd);
+                break;
+            case 11:
+                list_groups(sockfd);
+                break;
+            case 12:
+                see_group_messages(sockfd);
+                break;
+            case 13:
+                leave_group(sockfd);
+                break;
+            case 14:
+                remove_group_members(sockfd);
                 break;
             
             default:

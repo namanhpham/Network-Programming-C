@@ -89,6 +89,35 @@ void create_or_update_table(PGconn *conn, const char *table_name, const char *cr
         execute_sql(conn, create_table_sql);
     }
 }
+void update_table(PGconn *conn, const char *table_name, const char *create_table_sql)
+{
+    char query[256];
+    snprintf(query, sizeof(query),
+             "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = '%s');",
+             table_name);
+
+    PGresult *res = PQexec(conn, query);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Failed to check table existence: %s\n", PQerrorMessage(conn));
+        PQclear(res);
+        return;
+    }
+
+    int exists = strcmp(PQgetvalue(res, 0, 0), "t") == 0;
+    PQclear(res);
+
+    if (exists)
+    {
+        printf("Table '%s' already exists. Updating it.\n", table_name);
+        execute_sql(conn, create_table_sql);
+    }
+    else
+    {
+        printf("Table '%s' does not exist. Skip updating.\n", table_name);
+    }
+}
+
 
 void init_db(PGconn *conn)
 {
@@ -116,6 +145,9 @@ void init_db(PGconn *conn)
         "group_id UUID NOT NULL REFERENCES group_table(id) ON DELETE CASCADE, "
         "PRIMARY KEY (user_id, group_id));";
 
+    const char *group_members_table_alter =
+        "ALTER TABLE group_members ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL;";
+
     const char *message_table_create =
         "CREATE TABLE IF NOT EXISTS message ("
         "id UUID PRIMARY KEY DEFAULT gen_random_uuid(), "
@@ -138,5 +170,5 @@ void init_db(PGconn *conn)
     create_or_update_table(conn, "message", message_table_create);
     create_or_update_table(conn, "friendship", friendship_table_create);
     create_or_update_table(conn, "group_members", group_members_table_create);
-
+    update_table(conn, "group_members", group_members_table_alter);
 }
