@@ -32,62 +32,63 @@ void *receive_messages(void *arg)
 
         // Process received message
         pthread_mutex_lock(&login_mutex); // Lock mutex before updating is_logged_in
-        switch (msg.type)
-        {
-        case RESP_REGISTER_SUCCESS:
-            printf("Registration successful!\n");
-            break;
-        case RESP_SUCCESS:
-            printf("Login successful!\n");
-            is_logged_in = 1;
-            break;
-        case RESP_FAILURE:
-            printf("Login or registration failed.\n");
-            is_logged_in = 0;
-            break;
-        case MSG_ONLINE_USERS:
-            printf("Online users: %s\n", (char *)msg.payload);
-            break;
-        case MSG_FRIEND_REQUEST:
-        {
-            printf("You have friend request from: %s\n", (char *)msg.payload);
-            break;
-        }
-        case MSG_FRIENDS_LIST:
-        {
-            printf("Friend requests: %s\n", (char *)msg.payload);
-            break;
-        }
-        case MSG_FRIEND_REQUEST_LIST:
-        {
-            printf("Friend requests: %s\n", (char *)msg.payload);
-            break;
-        }
-        case MSG_GROUP_MSG_HISTORY:
-        {
-            printf("%s", (char *)msg.payload);
-            break;
-        }
-        case MSG_GROUP_MSG:
-        {
-            printf("%s\n", (char *)msg.payload);
-            break;
-        }
-        case RESP_LEAVE_GROUP:
-        {
-            printf("%s\n", (char *)msg.payload);
-            break;
-        }
-        case RESP_REMOVE_GROUP_MEMBER:
-        {
-            printf("%s\n", (char *)msg.payload);
-            break;
-        }
-        default:
-            printf("Unknown message type received.\n");
-            break;
-        }
-        pthread_mutex_unlock(&login_mutex); // Unlock after updating
+        switch (msg.type) {
+            case RESP_REGISTER_SUCCESS:
+                printf("Registration successful!\n");
+                break;
+            case RESP_LOGIN_SUCCESS:
+                is_logged_in = 1;
+                break;
+            case RESP_LOGIN_FAILURE:
+                printf("Login or registration failed.\n");
+                is_logged_in = 0;
+                break;
+            case RESP_SUCCESS:
+                printf("Success: %s\n", (char *)msg.payload);
+                break;
+            case RESP_FAILURE:
+                printf("Failure: %s\n", (char *)msg.payload);
+                break;
+            case MSG_ONLINE_USERS:
+                printf("Online users: %s\n", (char *)msg.payload);
+                break;
+            case MSG_FRIEND_REQUEST: {
+                printf("You have friend request from: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_FRIENDS_LIST: {
+                printf("Friend requests: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_FRIEND_REQUEST_LIST: {
+                printf("Friend requests: %s\n", (char *)msg.payload);
+                break;
+            }
+            case MSG_GROUP_MSG_HISTORY:
+            {
+                printf("%s", (char *)msg.payload);
+                break;
+            }
+            case MSG_GROUP_MSG:
+            {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
+            case RESP_LEAVE_GROUP:
+            {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
+            case RESP_REMOVE_GROUP_MEMBER:
+            {
+                printf("%s\n", (char *)msg.payload);
+                break;
+            }
+                default:
+                    printf("Unknown message type received.\n");
+                    break;
+            }
+            pthread_mutex_unlock(&login_mutex); // Unlock after updating
     }
     return NULL;
 }
