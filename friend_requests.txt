@@ -3,3 +3,5 @@ bebeij:be
 namsieungu:be
 be:namsieungu
 namsieungu:ge
+be2:be
+be2:be

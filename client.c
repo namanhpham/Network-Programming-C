@@ -30,13 +30,18 @@ void *receive_messages(void *arg) {
             case RESP_REGISTER_SUCCESS:
                 printf("Registration successful!\n");
                 break;
-            case RESP_SUCCESS:
-                printf("Login successful!\n");
+            case RESP_LOGIN_SUCCESS:
                 is_logged_in = 1;
                 break;
-            case RESP_FAILURE:
+            case RESP_LOGIN_FAILURE:
                 printf("Login or registration failed.\n");
                 is_logged_in = 0;
+                break;
+            case RESP_SUCCESS:
+                printf("Success: %s\n", (char *)msg.payload);
+                break;
+            case RESP_FAILURE:
+                printf("Failure: %s\n", (char *)msg.payload);
                 break;
             case MSG_ONLINE_USERS:
                 printf("Online users: %s\n", (char *)msg.payload);
