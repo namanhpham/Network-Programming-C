@@ -5,12 +5,22 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "protocol.c"
+#include "protocol.h"
+#include "client_gui.h"
+#include "client_gui.c"
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080
 
+extern GtkWidget *status_label; // Add this line
+
 int is_logged_in = 0;
 pthread_mutex_t login_mutex = PTHREAD_MUTEX_INITIALIZER; // Initialize mutex
+
+void update_status_label(const char *message)
+{
+    gtk_label_set_text(GTK_LABEL(status_label), message);
+}
 
 // Function to continuously receive messages from the server
 void *receive_messages(void *arg)
@@ -23,6 +33,7 @@ void *receive_messages(void *arg)
         if (receive_message(sockfd, &msg) <= 0)
         {
             printf("Server disconnected\n");
+            update_status_label("Server disconnected");
             close(sockfd);
             exit(EXIT_FAILURE);
         }
@@ -34,31 +45,39 @@ void *receive_messages(void *arg)
         case RESP_SUCCESS:
             printf("Login successful!\n");
             is_logged_in = 1;
+            update_status_label("Login successful!");
+            show_home_interface();
             break;
         case RESP_FAILURE:
             printf("Login or registration failed.\n");
             is_logged_in = 0;
+            update_status_label("Login or registration failed.");
             break;
         case MSG_ONLINE_USERS:
             printf("Online users: %s\n", (char *)msg.payload);
+            update_status_label((char *)msg.payload);
             break;
         case MSG_FRIEND_REQUEST:
         {
             printf("You have friend request from: %s\n", (char *)msg.payload);
+            update_status_label((char *)msg.payload);
             break;
         }
         case MSG_FRIENDS_LIST:
         {
             printf("Friend requests: %s\n", (char *)msg.payload);
+            update_status_label((char *)msg.payload);
             break;
         }
         case MSG_FRIEND_REQUEST_LIST:
         {
             printf("Friend requests: %s\n", (char *)msg.payload);
+            update_status_label((char *)msg.payload);
             break;
         }
         default:
             printf("Unknown message type received.\n");
+            update_status_label("Unknown message type received.");
             break;
         }
         pthread_mutex_unlock(&login_mutex); // Unlock after updating
@@ -153,6 +172,23 @@ void login_user(int sockfd)
 
     return;
 }
+
+// Remove redundant logout_user function
+// void logout_user(int sockfd)
+// {
+//     Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout", 6);
+//     if (send_message(sockfd, &msg) < 0)
+//     {
+//         perror("Logout failed");
+//     }
+//     else
+//     {
+//         pthread_mutex_lock(&login_mutex);
+//         is_logged_in = 0;
+//         pthread_mutex_unlock(&login_mutex);
+//         printf("Logged out successfully.\n");
+//     }
+// }
 
 void create_group(int sockfd)
 {
@@ -258,24 +294,10 @@ void see_friend_requests(int sockfd)
     }
 }
 
-void logout_user(int sockfd)
+int main(int argc, char *argv[])
 {
-    Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout", 6);
-    if (send_message(sockfd, &msg) < 0)
-    {
-        perror("Logout failed");
-    }
-    else
-    {
-        pthread_mutex_lock(&login_mutex);
-        is_logged_in = 0;
-        pthread_mutex_unlock(&login_mutex);
-        printf("Logged out successfully.\n");
-    }
-}
+    gtk_init(&argc, &argv);
 
-int main()
-{
     int sockfd = connect_to_server();
     pthread_t recv_thread;
 
@@ -286,107 +308,9 @@ int main()
         return EXIT_FAILURE;
     }
 
-    int command;
-    while (1)
-    {
-        pthread_mutex_lock(&login_mutex);
-        int logged_in = is_logged_in;
-        pthread_mutex_unlock(&login_mutex);
+    create_gui(&sockfd);
 
-        if (logged_in)
-        {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: send private message): ");
-        }
-        else
-        {
-            printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
-        }
-        printf("main: is_logged_in = %d\n", logged_in);
-
-        scanf("%d", &command);
-        while (getchar() != '\n')
-            ; // Clear input buffer
-
-        switch (command)
-        {
-        case 1:
-            pthread_mutex_lock(&login_mutex);
-            if (is_logged_in)
-            {
-                printf("You must logout first\n");
-                pthread_mutex_unlock(&login_mutex);
-                break;
-            }
-            pthread_mutex_unlock(&login_mutex);
-            register_user(sockfd);
-            break;
-        case 2:
-            pthread_mutex_lock(&login_mutex);
-            if (is_logged_in)
-            {
-                printf("You are already logged in\n");
-                pthread_mutex_unlock(&login_mutex);
-                break;
-            }
-            pthread_mutex_unlock(&login_mutex);
-            login_user(sockfd);
-            break;
-        case 3:
-            pthread_mutex_lock(&login_mutex);
-            if (!is_logged_in)
-            {
-                printf("You must login first\n");
-                pthread_mutex_unlock(&login_mutex);
-                break;
-            }
-            pthread_mutex_unlock(&login_mutex);
-            send_message_example(sockfd);
-            break;
-        case 4:
-            disconnect(sockfd);
-            return 0;
-        case 5:
-            send_friend_request(sockfd);
-            break;
-        case 6:
-            see_friend_requests(sockfd);
-            break;
-
-        case 7:
-            create_group(sockfd);
-            break;
-        case 8:
-            join_group(sockfd);
-            break;
-        case 9:
-            send_group_message(sockfd);
-            break;
-        case 10:
-            pthread_mutex_lock(&login_mutex);
-            if (!is_logged_in)
-            {
-                printf("You are not logged in\n");
-                pthread_mutex_unlock(&login_mutex);
-                break;
-            }
-            pthread_mutex_unlock(&login_mutex);
-            logout_user(sockfd);
-            break;
-        case 11:
-            pthread_mutex_lock(&login_mutex);
-            if (!is_logged_in)
-            {
-                printf("You must login first\n");
-                pthread_mutex_unlock(&login_mutex);
-                break;
-            }
-            pthread_mutex_unlock(&login_mutex);
-            send_private_message(sockfd);
-            break;
-        default:
-            printf("Unknown command\n");
-        }
-    }
+    gtk_main();
 
     close(sockfd);
     return 0;

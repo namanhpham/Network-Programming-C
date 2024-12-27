@@ -38,3 +38,27 @@ clean:
 # Run the compiled program
 run: $(TARGET)
 	./$(TARGET)
+
+# Client application
+CC = gcc
+CFLAGS = `pkg-config --cflags gtk+-3.0`
+LIBS = `pkg-config --libs gtk+-3.0`
+SRC = client_gui.c protocol.c
+OBJ = $(SRC:.c=.o)
+EXEC = client
+
+client: $(EXEC)
+
+$(EXEC): $(OBJ)
+	$(CC) -o $@ $^ $(LIBS)
+
+%.o: %.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+clean_client:
+	rm -f $(OBJ) $(EXEC)
+
+run_client: $(EXEC)
+	./$(EXEC)
+
+.PHONY: all clean run client clean_client run_client
