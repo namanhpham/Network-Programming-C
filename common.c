@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-Client *clients[MAX_CLIENTS] = {NULL};          // Global array of clients
-Client *online_clients[MAX_CLIENTS] = {NULL};  // Global array of online clients
+Client *clients[MAX_CLIENTS] = {NULL};        // Global array of clients
+Client *online_clients[MAX_CLIENTS] = {NULL}; // Global array of online clients
 
 Client *get_client_by_socket(int client_socket)
 {
@@ -34,12 +34,12 @@ int username_exists(PGconn *conn, const char *username)
     const char *paramValues[1] = {username};
     PGresult *res = PQexecParams(conn,
                                  "SELECT 1 FROM users WHERE name = $1",
-                                 1,       /* one param */
-                                 NULL,    /* let the backend deduce param type */
+                                 1,    /* one param */
+                                 NULL, /* let the backend deduce param type */
                                  paramValues,
-                                 NULL,    /* don't need param lengths since text */
-                                 NULL,    /* default to all text params */
-                                 0);      /* ask for binary results */
+                                 NULL, /* don't need param lengths since text */
+                                 NULL, /* default to all text params */
+                                 0);   /* ask for binary results */
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
     {
@@ -58,12 +58,12 @@ int save_account(PGconn *conn, const char *username, const char *password)
     const char *paramValues[2] = {username, password};
     PGresult *res = PQexecParams(conn,
                                  "INSERT INTO users (name, password) VALUES ($1, $2)",
-                                 2,       /* two params */
-                                 NULL,    /* let the backend deduce param type */
+                                 2,    /* two params */
+                                 NULL, /* let the backend deduce param type */
                                  paramValues,
-                                 NULL,    /* don't need param lengths since text */
-                                 NULL,    /* default to all text params */
-                                 0);      /* ask for binary results */
+                                 NULL, /* don't need param lengths since text */
+                                 NULL, /* default to all text params */
+                                 0);   /* ask for binary results */
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK)
     {
@@ -90,12 +90,12 @@ int validate_credentials(PGconn *conn, const char *username, const char *passwor
     const char *paramValues[2] = {username, password};
     PGresult *res = PQexecParams(conn,
                                  "SELECT 1 FROM users WHERE name = $1 AND password = $2",
-                                 2,       /* two params */
-                                 NULL,    /* let the backend deduce param type */
+                                 2,    /* two params */
+                                 NULL, /* let the backend deduce param type */
                                  paramValues,
-                                 NULL,    /* don't need param lengths since text */
-                                 NULL,    /* default to all text params */
-                                 0);      /* ask for binary results */
+                                 NULL, /* don't need param lengths since text */
+                                 NULL, /* default to all text params */
+                                 0);   /* ask for binary results */
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK)
     {
