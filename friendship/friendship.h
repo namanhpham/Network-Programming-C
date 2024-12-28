@@ -14,8 +14,10 @@ extern FriendPair friends[MAX_FRIENDS];
 void handle_accept_friend_request(Client *client, const char *payload, PGconn *conn);
 void handle_decline_friend_request(Client *client, const char *payload, PGconn *conn);
 int is_online(const char *username);
-void handle_friend_request(Client *client, const char *payload, PGconn *conn);
+void handle_send_friend_request(Client *client, const char *payload, PGconn *conn);
 void handle_see_friend_request(int client_socket, PGconn *conn);
 int save_friend_request(PGconn *conn, const char *from_username, const char *to_username);
+void handle_see_friend_list(int client_socket, PGconn *conn);
+void handle_remove_friend(Client *client, const char *payload, PGconn *conn);
 
 #endif

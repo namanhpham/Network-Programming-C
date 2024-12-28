@@ -90,7 +90,7 @@ void *handle_client(void *arg)
             break;
         }
         case MSG_FRIEND_REQUEST:
-            handle_friend_request(client, (char *)message.payload, conn);
+            handle_send_friend_request(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REQUEST_ACCEPTED:
             handle_accept_friend_request(client, (char *)message.payload, conn);
@@ -99,10 +99,10 @@ void *handle_client(void *arg)
             handle_decline_friend_request(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REMOVED:
-            handle_remove_friend(client->socket, (char *)message.payload, conn);
+            handle_remove_friend(client, (char *)message.payload, conn);
             break;
         case MSG_FRIENDS_LIST:
-            handle_get_friends_list(client->socket, conn);
+            handle_see_friend_list(client->socket, conn);
             break;
         case MSG_FRIEND_REQUEST_LIST:
             handle_see_friend_request(client->socket, conn);

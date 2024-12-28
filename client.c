@@ -51,11 +51,11 @@ void *receive_messages(void *arg) {
                 break;
             }
             case MSG_FRIENDS_LIST: {
-                printf("Friend requests: %s\n", (char *)msg.payload);
+                printf("%s\n", (char *)msg.payload);
                 break;
             }
             case MSG_FRIEND_REQUEST_LIST: {
-                printf("See friend request: \n%s\n", (char *)msg.payload);
+                printf("%s\n", (char *)msg.payload);
                 break;
             }
             case MSG_FRIEND_REQUEST_ACCEPTED:
@@ -63,6 +63,9 @@ void *receive_messages(void *arg) {
                 break;
             case MSG_FRIEND_REQUEST_DECLINED:
                 printf("Your friend request was declined by: %s\n", (char *)msg.payload);
+                break;
+            case MSG_FRIEND_REMOVED:
+                printf("You are no longer friends with: %s\n", (char *)msg.payload);
                 break;
             default:
                 printf("Unknown message type received.\n");
@@ -276,6 +279,26 @@ void decline_friend_request(int sockfd) {
     }
 }
 
+void get_friend_list(int sockfd) {
+    Message msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)"Get friend list", 15);
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to get friend list");
+    }
+}
+
+void remove_friend(int sockfd) {
+    char friend_username[128];
+    printf("Enter the username of the friend to remove: ");
+    scanf("%127s", friend_username);
+
+    Message msg = create_message(MSG_FRIEND_REMOVED, (uint8_t *)friend_username, strlen(friend_username));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to remove friend");
+    } else {
+        printf("Friend removal request sent.\n");
+    }
+}
+
 int main() {
     int sockfd = connect_to_server();
     pthread_t recv_thread;
@@ -293,7 +316,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: sent friend request, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: accept friend request, 12: decline friend request): ");
+            printf("Enter command (3: send message, 4: exit, 5: send friend request, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: accept friend request, 12: decline friend request, 13: get friend list, 14: remove friend): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
@@ -368,7 +391,12 @@ int main() {
             case 12:
                 decline_friend_request(sockfd);
                 break;
-            
+            case 13:
+                get_friend_list(sockfd);
+                break;
+            case 14:
+                remove_friend(sockfd);
+                break;
             default:
                 printf("Unknown command\n");
         }

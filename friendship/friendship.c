@@ -96,7 +96,7 @@ int accept_friend_request(PGconn *conn, const char *from_username, const char *t
     return 1;
 }
 
-void handle_friend_request(Client *client, const char *payload, PGconn *conn)
+void handle_send_friend_request(Client *client, const char *payload, PGconn *conn)
 {
     char friend_username[128];
     sscanf(payload, "%127s", friend_username);
@@ -161,6 +161,7 @@ void handle_accept_friend_request(Client *client, const char *payload, PGconn *c
     {
         fprintf(stderr, "User %s does not exist.\n", friend_username);
         Message response = create_message(RESP_FAILURE, (uint8_t *)"User does not exist", 18);
+        send_message(client->socket, &response);
         if (friend_res)
             PQclear(friend_res);
         return;
@@ -224,6 +225,7 @@ void handle_decline_friend_request(Client *client, const char *payload, PGconn *
     {
         fprintf(stderr, "User %s does not exist.\n", friend_username);
         Message response = create_message(RESP_FAILURE, (uint8_t *)"User does not exist", 18);
+        send_message(client->socket, &response);
         if (friend_res)
             PQclear(friend_res);
         return;
@@ -316,4 +318,119 @@ void handle_see_friend_request(int client_socket, PGconn *conn)
 
         PQclear(res);
     }
+}
+
+// Check if two users are friends
+int are_friends(PGconn *conn, const char *username1, const char *username2)
+{
+    const char *paramValues[2] = {username1, username2};
+    PGresult *res = PQexecParams(conn,
+                                 "SELECT * FROM friendship WHERE (user_id = (SELECT id FROM users WHERE name = $1) AND friend_requested_user_id = (SELECT id FROM users WHERE name = $2) AND accepted_at IS NOT NULL) OR (user_id = (SELECT id FROM users WHERE name = $2) AND friend_requested_user_id = (SELECT id FROM users WHERE name = $1) AND accepted_at IS NOT NULL)",
+                                 2,       /* two params */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Check friendship status failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        return 0;
+    }
+
+    int result = PQntuples(res) > 0;
+    PQclear(res);
+    return result;
+}
+
+// Lấy danh sách bạn bè
+void handle_see_friend_list(int client_socket, PGconn *conn)
+{
+    Client *client = get_client_by_socket(client_socket);
+    if (client)
+    {
+        const char *paramValues[1] = {client->user_id};
+        PGresult *res = PQexecParams(conn,
+                                     "SELECT u.name FROM users u, friendship f WHERE (f.user_id = u.id AND f.friend_requested_user_id = $1 AND f.accepted_at IS NOT NULL) OR (f.friend_requested_user_id = u.id AND f.user_id = $1 AND f.accepted_at IS NOT NULL)",
+                                     1,       /* one param */
+                                     NULL,    /* let the backend deduce param type */
+                                     paramValues,
+                                     NULL,    /* don't need param lengths since text */
+                                     NULL,    /* default to all text params */
+                                     0);      /* ask for binary results */
+
+        if (PQresultStatus(res) != PGRES_TUPLES_OK)
+        {
+            fprintf(stderr, "Fetch friend list failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            return;
+        }
+
+        char friend_list[1024] = {0};
+        char friend_numbers[256];
+        sprintf(friend_numbers, "Friend numbers: %d\n", PQntuples(res));
+        strcat(friend_list, friend_numbers);
+        for (int i = 0; i < PQntuples(res); i++)
+        {
+            char *friend_username = PQgetvalue(res, i, 0);
+            strcat(friend_list, friend_username);
+            strcat(friend_list, "\n");
+        }
+
+        Message friend_list_msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)friend_list, strlen(friend_list));
+        send_message(client_socket, &friend_list_msg);
+        printf("Sent friend list to %s\n", client->username);
+
+        PQclear(res);
+    }
+}
+
+// Handle remove friend request
+void handle_remove_friend(Client *client, const char *payload, PGconn *conn)
+{
+    char friend_username[128];
+    sscanf(payload, "%127s", friend_username);
+
+    // Check if the users are friends
+    if (!are_friends(conn, client->username, friend_username))
+    {
+        Message response = create_message(RESP_FAILURE, (uint8_t *)"You are not friends with this user", 33);
+        send_message(client->socket, &response);
+        return;
+    }
+
+    // Remove the friendship
+    const char *paramValues[2] = {client->username, friend_username};
+    PGresult *res = PQexecParams(conn,
+                                 "DELETE FROM friendship WHERE (user_id = (SELECT id FROM users WHERE name = $1) AND friend_requested_user_id = (SELECT id FROM users WHERE name = $2)) OR (user_id = (SELECT id FROM users WHERE name = $2) AND friend_requested_user_id = (SELECT id FROM users WHERE name = $1))",
+                                 2,       /* two params */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "Remove friend failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        Message response = create_message(RESP_FAILURE, (uint8_t *)"Remove friend failed", 20);
+        send_message(client->socket, &response);
+        return;
+    }
+
+    PQclear(res);
+
+    // Notify both users about the removal
+    Client *friend_client = get_online_client_by_username(friend_username);
+    if (friend_client)
+    {
+        Message response = create_message(MSG_FRIEND_REMOVED, (uint8_t *)client->username, strlen(client->username));
+        send_message(friend_client->socket, &response);
+    }
+
+    Message response = create_message(RESP_SUCCESS, (uint8_t *)"Friend removed successfully", 27);
+    send_message(client->socket, &response);
 }
