@@ -162,7 +162,8 @@ void init_db(PGconn *conn)
         "user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
         "accepted_at TIMESTAMP, "
         "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
-        "PRIMARY KEY (user_id, friend_requested_user_id));";
+        "PRIMARY KEY (user_id, friend_requested_user_id), "
+        "CONSTRAINT unique_friendship_pair UNIQUE (user_id, friend_requested_user_id));";
 
     // Create tables
     create_or_update_table(conn, "users", user_table_create);
