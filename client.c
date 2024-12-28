@@ -61,9 +61,15 @@ void *receive_messages(void *arg)
                 break;
             }
             case MSG_FRIEND_REQUEST_LIST: {
-                printf("Friend requests: %s\n", (char *)msg.payload);
+                printf("See friend request: \n%s\n", (char *)msg.payload);
                 break;
             }
+            case MSG_FRIEND_REQUEST_ACCEPTED:
+                printf("Your friend request was accepted by: %s\n", (char *)msg.payload);
+                break;
+            case MSG_FRIEND_REQUEST_DECLINED:
+                printf("Your friend request was declined by: %s\n", (char *)msg.payload);
+                break;
             case MSG_GROUP_MSG_HISTORY:
             {
                 printf("%s", (char *)msg.payload);
@@ -283,6 +289,46 @@ void logout_user(int sockfd)
     }
 }
 
+void accept_friend_request(int sockfd) {
+    // Fetch and display friend request list first
+    see_friend_requests(sockfd);
+
+    // Delay to allow `receive_messages` to display the friend request list
+    struct timespec delay = {0, 500000000L};  // 500ms
+    nanosleep(&delay, NULL);
+
+    char friend_username[128];
+    printf("Enter the username of the friend request to accept: ");
+    scanf("%127s", friend_username);
+
+    Message msg = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)friend_username, strlen(friend_username));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to accept friend request");
+    } else {
+        printf("Friend request accepted.\n");
+    }
+}
+
+void decline_friend_request(int sockfd) {
+    // Fetch and display friend request list first
+    see_friend_requests(sockfd);
+
+    // Delay to allow `receive_messages` to display the friend request list
+    struct timespec delay = {0, 500000000L};  // 500ms
+    nanosleep(&delay, NULL);
+
+    char friend_username[128];
+    printf("Enter the username of the friend request to decline: ");
+    scanf("%127s", friend_username);
+
+    Message msg = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)friend_username, strlen(friend_username));
+    if (send_message(sockfd, &msg) < 0) {
+        perror("Failed to decline friend request");
+    } else {
+        printf("Friend request declined.\n");
+    }
+}
+
 void see_group_messages(int sockfd)
 {
     char group_name[128];
@@ -335,8 +381,7 @@ void remove_group_members(int sockfd)
         perror("Failed to remove group members");
     }
 }
-int main()
-{
+int main() {
     int sockfd = connect_to_server();
     pthread_t recv_thread;
 
@@ -356,7 +401,7 @@ int main()
 
         if (logged_in)
         {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members, 15: accept friend request, 16: decline friend request ): ");
         }
         else
         {
@@ -444,6 +489,12 @@ int main()
             break;
         case 14:
             remove_group_members(sockfd);
+            break;
+        case 15:
+            accept_friend_request(sockfd);
+            break;
+        case 16:
+            decline_friend_request(sockfd);
             break;
 
         default:

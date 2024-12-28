@@ -80,7 +80,7 @@ void *handle_client(void *arg)
             handle_accept_friend_request(client->socket, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REQUEST_DECLINED:
-            handle_decline_friend_request(client->socket, (char *)message.payload);
+            handle_decline_friend_request(client->socket, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REMOVED:
             handle_remove_friend(client->socket, (char *)message.payload, conn);
