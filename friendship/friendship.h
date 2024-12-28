@@ -15,7 +15,7 @@ void add_friend(PGconn *conn, const char *username1, const char *username2);
 int is_friend(const char *username1, const char *username2);
 void remove_friend(const char *username1, const char *username2);
 void handle_accept_friend_request(int client_socket, const char *payload, PGconn *conn);
-void handle_decline_friend_request(int client_socket, const char *payload);
+void handle_decline_friend_request(int client_socket, const char *payload, PGconn *conn);
 void handle_remove_friend(int client_socket, const char *payload, PGconn *conn);
 void handle_get_friends_list(int client_socket, PGconn *conn);
 int is_online(const char *username);

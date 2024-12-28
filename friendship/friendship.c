@@ -3,6 +3,7 @@
 #include "friendship.h"
 #include "../protocol.h" // File này sẽ chứa hàm send_message, create_message, v.v. nếu cần
 #include "../common.h"
+#include "../utils.h"
 #include <stdio.h>
 
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
@@ -77,39 +78,60 @@ void handle_accept_friend_request(int client_socket, const char *payload, PGconn
     char friend_username[128];
     sscanf(payload, "%127s", friend_username);
 
-    Client *client = get_client_by_socket(client_socket); // Hàm giả định trả về client từ socket
-
-    if (client && !is_friend(client->username, friend_username))
+    // Fetch the client from the database
+    PGresult *client_res = get_user_by_username(conn, friend_username);
+    if (client_res == NULL || PQntuples(client_res) == 0)
     {
-        add_friend(conn, client->username, friend_username);
+        fprintf(stderr, "User %s does not exist.\n", friend_username);
+        if (client_res)
+            PQclear(client_res);
+        return;
+    }
+
+    char *client_username = PQgetvalue(client_res, 0, 1); // Assuming the username is in the second column
+
+    if (!is_friend(client_username, friend_username))
+    {
+        add_friend(conn, client_username, friend_username);
 
         // Gửi thông báo cho người gửi lời mời
         Client *friend_client = get_online_client_by_username(friend_username); // Hàm trả về client theo username
         if (friend_client)
         {
-            Message response = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)client->username, strlen(client->username));
+            Message response = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)client_username, strlen(client_username));
             send_message(friend_client->socket, &response);
         }
     }
+
+    PQclear(client_res);
 }
 
 // Xử lý yêu cầu từ chối kết bạn
-void handle_decline_friend_request(int client_socket, const char *payload)
+void handle_decline_friend_request(int client_socket, const char *payload, PGconn *conn)
 {
     char friend_username[128];
     sscanf(payload, "%127s", friend_username);
 
-    Client *client = get_client_by_socket(client_socket);
-
-    if (client)
+    // Fetch the client from the database
+    PGresult *client_res = get_user_by_username(conn, friend_username);
+    if (client_res == NULL || PQntuples(client_res) == 0)
     {
-        Client *friend_client = get_online_client_by_username(friend_username);
-        if (friend_client)
-        {
-            Message response = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)client->username, strlen(client->username));
-            send_message(friend_client->socket, &response);
-        }
+        fprintf(stderr, "User %s does not exist.\n", friend_username);
+        if (client_res)
+            PQclear(client_res);
+        return;
     }
+
+    char *client_username = PQgetvalue(client_res, 0, 1); // Assuming the username is in the second column
+
+    Client *friend_client = get_online_client_by_username(friend_username);
+    if (friend_client)
+    {
+        Message response = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)client_username, strlen(client_username));
+        send_message(friend_client->socket, &response);
+    }
+
+    PQclear(client_res);
 }
 
 // Xử lý yêu cầu hủy kết bạn
@@ -256,6 +278,8 @@ void handle_friend_request(Client *client, const char *payload, PGconn *conn)
         {
             Message response = create_message(RESP_FAILURE, (uint8_t *)"Friend request failed", 21);
             send_message(client->socket, &response);
+            PQclear(res);
+            return;
         }
 
         for (int i = 0; i < MAX_CLIENTS; i++)
@@ -286,7 +310,7 @@ void handle_see_friend_request(int client_socket, PGconn *conn)
     {
         const char *paramValues[1] = {client->user_id};
         PGresult *res = PQexecParams(conn,
-                                     "SELECT name FROM users WHERE id = (SELECT friend_requested_user_id FROM friendship WHERE user_id = $1 AND accepted_at IS NULL)",
+                                     "SELECT u.name FROM users u, friendship f WHERE f.friend_requested_user_id = u.id AND f.user_id = $1 AND f.accepted_at IS NULL",
                                      1,       /* one param */
                                      NULL,    /* let the backend deduce param type */
                                      paramValues,
@@ -301,12 +325,20 @@ void handle_see_friend_request(int client_socket, PGconn *conn)
             return;
         }
 
+        char friend_requests_list[1024] = {0};
+        char request_numbers[256];
+        sprintf(request_numbers, "Friend requests number: %d\n", PQntuples(res));
+        strcat(friend_requests_list, request_numbers);
         for (int i = 0; i < PQntuples(res); i++)
         {
             char *from_username = PQgetvalue(res, i, 0);
-            Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)from_username, strlen(from_username));
-            send_message(client_socket, &friend_request_msg);
+            strcat(friend_requests_list, from_username);
+            strcat(friend_requests_list, "\n");
         }
+
+        Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)friend_requests_list, strlen(friend_requests_list));
+        send_message(client_socket, &friend_request_msg);
+        printf("Sent friend requests list to %s\n", client->username);
 
         PQclear(res);
     }
