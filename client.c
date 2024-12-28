@@ -293,7 +293,7 @@ int main() {
         pthread_mutex_unlock(&login_mutex);
 
         if (logged_in) {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: accept friend request, 12: decline friend request): ");
+            printf("Enter command (3: send message, 4: exit, 5: sent friend request, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: accept friend request, 12: decline friend request): ");
         } else {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
