@@ -4,3 +4,4 @@ accounts.txt
 .env
 server
 client
+client_gui
