@@ -374,3 +374,56 @@
 [2024-12-29 20:55:30]  |  Sent friend list to btkh
 
 [2024-12-29 20:55:33]  |  User btkh disconnected
+[2024-12-29 21:11:09]  |  User btkh logged in
+[2024-12-29 21:11:09]  |  Sent friend list to btkh
+
+[2024-12-29 21:11:15]  |  User btkh logged out
+[2024-12-29 21:11:16]  |  User btkh logged in
+[2024-12-29 21:11:16]  |  Sent friend list to btkh
+
+[2024-12-29 21:11:22]  |  Sent private message history to btkh
+[2024-12-29 21:11:27]  |  User btkh sent a private message to nam
+[2024-12-29 21:11:33]  |  User btkh sent a private message to nam
+[2024-12-29 21:11:36]  |  Sent private message history to btkh
+[2024-12-29 21:11:38]  |  Sent private message history to btkh
+[2024-12-29 21:11:52]  |  Sent private message history to btkh
+[2024-12-29 21:12:01]  |  User btkh sent a private message to be
+[2024-12-29 21:12:04]  |  Sent private message history to btkh
+[2024-12-29 21:12:06]  |  Sent private message history to btkh
+[2024-12-29 21:12:08]  |  Sent private message history to btkh
+[2024-12-29 21:12:13]  |  User btkh sent a private message to nam
+[2024-12-29 21:12:17]  |  Sent private message history to btkh
+[2024-12-29 21:12:21]  |  User btkh logged out
+[2024-12-29 21:12:22]  |  User btkh logged in
+[2024-12-29 21:12:22]  |  Sent friend list to btkh
+
+[2024-12-29 21:12:26]  |  Sent private message history to btkh
+[2024-12-29 21:12:29]  |  Sent private message history to btkh
+[2024-12-29 21:12:42]  |  User btkh sent a private message to be
+[2024-12-29 21:12:44]  |  User btkh sent a private message to be
+[2024-12-29 21:12:46]  |  User btkh sent a private message to be
+[2024-12-29 21:12:48]  |  User btkh sent a private message to be
+[2024-12-29 21:14:53]  |  Sent private message history to btkh
+[2024-12-29 21:14:59]  |  User btkh sent a private message to nam
+[2024-12-29 21:15:12]  |  User btkh logged out
+[2024-12-29 21:15:12]  |  User btkh logged in
+[2024-12-29 21:15:12]  |  Sent friend list to btkh
+
+[2024-12-29 21:15:50]  |  Sent private message history to btkh
+[2024-12-29 21:15:57]  |  User btkh sent a private message to nam
+[2024-12-29 21:16:05]  |  Sent private message history to btkh
+[2024-12-29 21:16:15]  |  Sent private message history to btkh
+[2024-12-29 21:16:16]  |  User btkh sent a private message to nam
+[2024-12-29 21:16:16]  |  User btkh logged out
+[2024-12-29 21:16:18]  |  User btkh logged in
+[2024-12-29 21:16:18]  |  Sent friend list to btkh
+
+[2024-12-29 21:16:20]  |  Sent private message history to btkh
+[2024-12-29 21:16:22]  |  Sent private message history to btkh
+[2024-12-29 21:16:25]  |  Sent private message history to btkh
+[2024-12-29 21:16:47]  |  User btkh logged in
+[2024-12-29 21:16:47]  |  Sent friend list to btkh
+
+[2024-12-29 21:16:53]  |  Sent private message history to btkh
+[2024-12-29 21:16:58]  |  Sent private message history to btkh
+[2024-12-29 21:17:07]  |  User btkh logged out

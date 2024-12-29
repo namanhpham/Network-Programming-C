@@ -1,11 +1,11 @@
 #include <gtk/gtk.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-#include "protocol.h" // Ensure the protocol header is included
+#include "../protocol.h"
 #include "client_gui.h"
-#include "chat_tab.h"
-#include "friend_tab.h"
-#include "group_tab.h"
+#include "../private_message/chat_tab.h"
+#include "../friendship/friend_tab.h"
+#include "../group/group_tab.h"
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080

@@ -1,5 +1,4 @@
 #include <gtk/gtk.h>
-#include "client_gui.h"
 
 GtkWidget *create_group_tab()
 {

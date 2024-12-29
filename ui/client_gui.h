@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 #include <pthread.h>
-#include "protocol.h"
+#include "../protocol.h"
 
 // Declare external variables
 extern GtkWidget *chat_text_view;
