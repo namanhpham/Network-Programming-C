@@ -5,6 +5,10 @@
 #include <pthread.h>
 #include "protocol.h"
 
+// Declare external variables
+extern GtkWidget *chat_text_view;
+extern GtkWidget *message_entry;
+
 // Function declarations
 void display_message(const char *message);
 void *receive_messages(void *arg);

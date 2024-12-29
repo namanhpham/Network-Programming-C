@@ -1,1 +1,376 @@
 [2024-12-29 17:45:31]  |  User nam logged in
+[2024-12-29 19:04:44]  |  User btkh logged in
+[2024-12-29 19:04:58]  |  User btkh disconnected
+[2024-12-29 19:06:25]  |  User btkh logged in
+[2024-12-29 19:06:48]  |  User btkh logged in
+[2024-12-29 19:06:53]  |  Sent friend list to btkh
+
+[2024-12-29 19:06:54]  |  Sent friend list to btkh
+
+[2024-12-29 19:06:54]  |  Sent private message history to btkh
+[2024-12-29 19:06:54]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:02]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:02]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:02]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:04]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:04]  |  Sent private message history to btkh
+[2024-12-29 19:07:04]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:11]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:11]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:10]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:10]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:11]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:12]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:12]  |  Sent private message history to btkh
+[2024-12-29 19:07:12]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:13]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:13]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:13]  |  Sent friend list to btkh
+
+[2024-12-29 19:07:31]  |  User btkh disconnected
+[2024-12-29 19:10:44]  |  User btkh logged in
+[2024-12-29 19:10:49]  |  Sent friend list to btkh
+
+[2024-12-29 19:10:49]  |  Sent friend list to btkh
+
+[2024-12-29 19:10:49]  |  Sent private message history to btkh
+[2024-12-29 19:10:49]  |  Sent friend list to btkh
+
+[2024-12-29 19:10:51]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:03]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:05]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:06]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:06]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:06]  |  Sent friend list to btkh
+
+[2024-12-29 19:11:13]  |  User btkh disconnected
+[2024-12-29 19:12:26]  |  User btkh logged in
+[2024-12-29 19:12:32]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:33]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:33]  |  Sent private message history to btkh
+[2024-12-29 19:12:33]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:34]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:36]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:36]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:38]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:41]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:41]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:41]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:42]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:42]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:40]  |  Sent friend list to btkh
+
+[2024-12-29 19:12:41]  |  Sent private message history to btkh
+[2024-12-29 19:12:41]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:11]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:14]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:15]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:31]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:48]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:48]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:48]  |  Sent private message history to btkh
+[2024-12-29 19:13:48]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:52]  |  User btkh sent a private message to nam
+[2024-12-29 19:13:56]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:57]  |  Sent private message history to btkh
+[2024-12-29 19:13:57]  |  Sent friend list to btkh
+
+[2024-12-29 19:13:59]  |  User btkh disconnected
+[2024-12-29 19:15:15]  |  User btkh logged in
+[2024-12-29 19:15:15]  |  Sent friend list to btkh
+
+[2024-12-29 19:15:25]  |  User btkh disconnected
+[2024-12-29 19:17:32]  |  User btkh logged in
+[2024-12-29 19:17:32]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:34]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:37]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:43]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:44]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:44]  |  Sent private message history to btkh
+[2024-12-29 19:17:44]  |  Sent friend list to btkh
+
+[2024-12-29 19:17:47]  |  User btkh disconnected
+[2024-12-29 19:19:11]  |  User btkh logged in
+[2024-12-29 19:19:11]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:17]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:21]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:21]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:25]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:26]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:43]  |  Sent friend list to btkh
+
+[2024-12-29 19:19:41]  |  Sent friend list to btkh
+
+[2024-12-29 19:21:31]  |  User btkh logged in
+[2024-12-29 19:21:32]  |  Sent friend list to btkh
+
+[2024-12-29 19:21:38]  |  Sent friend list to btkh
+
+[2024-12-29 19:21:39]  |  Sent friend list to btkh
+
+[2024-12-29 19:21:40]  |  Sent friend list to btkh
+
+[2024-12-29 19:22:45]  |  User btkh logged in
+[2024-12-29 19:22:45]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:12]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:18]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:18]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:20]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:20]  |  Sent friend list to btkh
+
+[2024-12-29 19:23:25]  |  User btkh disconnected
+[2024-12-29 19:25:12]  |  User btkh logged in
+[2024-12-29 19:25:12]  |  Sent friend list to btkh
+
+[2024-12-29 19:25:15]  |  Sent private message history to btkh
+[2024-12-29 19:25:17]  |  Sent private message history to btkh
+[2024-12-29 19:25:29]  |  Sent private message history to btkh
+[2024-12-29 19:25:31]  |  Sent private message history to btkh
+[2024-12-29 19:25:48]  |  User btkh logged out
+[2024-12-29 19:25:54]  |  User btkh logged in
+[2024-12-29 19:25:54]  |  Sent friend list to btkh
+
+[2024-12-29 19:32:26]  |  User btkh logged in
+[2024-12-29 19:32:27]  |  Sent friend list to btkh
+
+[2024-12-29 19:32:28]  |  Sent private message history to btkh
+[2024-12-29 19:32:28]  |  Sent private message history to btkh
+[2024-12-29 19:32:39]  |  Sent private message history to btkh
+[2024-12-29 19:32:39]  |  Sent private message history to btkh
+[2024-12-29 19:32:44]  |  Sent private message history to btkh
+[2024-12-29 19:32:45]  |  Sent private message history to btkh
+[2024-12-29 19:32:46]  |  Sent private message history to btkh
+[2024-12-29 19:32:47]  |  Sent private message history to btkh
+[2024-12-29 19:32:58]  |  Sent private message history to btkh
+[2024-12-29 19:32:58]  |  Sent private message history to btkh
+[2024-12-29 19:33:13]  |  Sent private message history to btkh
+[2024-12-29 19:33:13]  |  Sent private message history to btkh
+[2024-12-29 19:34:15]  |  Sent private message history to btkh
+[2024-12-29 19:34:15]  |  Sent private message history to btkh
+[2024-12-29 19:35:17]  |  User btkh logged in
+[2024-12-29 19:35:17]  |  Sent friend list to btkh
+
+[2024-12-29 19:35:18]  |  Sent private message history to btkh
+[2024-12-29 19:35:19]  |  Sent private message history to btkh
+[2024-12-29 19:35:24]  |  Sent private message history to btkh
+[2024-12-29 19:35:25]  |  Sent private message history to btkh
+[2024-12-29 19:35:27]  |  User btkh disconnected
+[2024-12-29 19:36:14]  |  User btkh logged in
+[2024-12-29 19:36:15]  |  Sent friend list to btkh
+
+[2024-12-29 19:36:18]  |  Sent private message history to btkh
+[2024-12-29 19:36:27]  |  User btkh sent a private message to huyenbtk
+[2024-12-29 19:36:34]  |  Sent private message history to btkh
+[2024-12-29 19:36:35]  |  Sent private message history to btkh
+[2024-12-29 19:36:43]  |  User btkh sent a private message to nam
+[2024-12-29 19:36:46]  |  Sent private message history to btkh
+[2024-12-29 19:36:53]  |  Sent private message history to btkh
+[2024-12-29 19:36:53]  |  Sent private message history to btkh
+[2024-12-29 19:36:54]  |  Sent private message history to btkh
+[2024-12-29 19:36:54]  |  Sent private message history to btkh
+[2024-12-29 19:36:55]  |  User btkh disconnected
+[2024-12-29 19:37:59]  |  User btkh logged in
+[2024-12-29 19:38:07]  |  User btkh disconnected
+[2024-12-29 19:40:55]  |  User btkh logged in
+[2024-12-29 19:40:55]  |  Sent friend list to btkh
+
+[2024-12-29 19:41:16]  |  User btkh disconnected
+[2024-12-29 19:42:45]  |  User btkh logged in
+[2024-12-29 19:42:45]  |  Sent friend list to btkh
+
+[2024-12-29 19:42:46]  |  User btkh disconnected
+[2024-12-29 19:42:53]  |  User btkh logged in
+[2024-12-29 19:42:53]  |  Sent friend list to btkh
+
+[2024-12-29 19:42:59]  |  User btkh disconnected
+[2024-12-29 19:43:16]  |  User btkh logged in
+[2024-12-29 19:43:16]  |  Sent friend list to btkh
+
+[2024-12-29 19:43:22]  |  Sent friend list to btkh
+
+[2024-12-29 19:43:25]  |  User btkh disconnected
+[2024-12-29 19:43:34]  |  User btkh logged in
+[2024-12-29 19:43:34]  |  Sent friend list to btkh
+
+[2024-12-29 19:43:37]  |  User btkh disconnected
+[2024-12-29 19:52:46]  |  User btkh logged in
+[2024-12-29 19:52:46]  |  Sent friend list to btkh
+
+[2024-12-29 19:52:53]  |  Sent private message history to btkh
+[2024-12-29 19:53:17]  |  User btkh logged out
+[2024-12-29 19:53:16]  |  User btkh logged in
+[2024-12-29 19:53:16]  |  Sent friend list to btkh
+
+[2024-12-29 19:53:24]  |  User btkh disconnected
+[2024-12-29 19:54:52]  |  User btkh logged in
+[2024-12-29 19:54:52]  |  Sent friend list to btkh
+
+[2024-12-29 19:55:34]  |  User btkh logged out
+[2024-12-29 19:55:35]  |  User btkh logged in
+[2024-12-29 19:55:35]  |  Sent friend list to btkh
+
+[2024-12-29 19:55:40]  |  User btkh logged out
+[2024-12-29 19:56:39]  |  User btkh logged in
+[2024-12-29 19:56:39]  |  Sent friend list to btkh
+
+[2024-12-29 20:03:19]  |  User btkh logged in
+[2024-12-29 20:03:19]  |  Sent friend list to btkh
+
+[2024-12-29 20:04:41]  |  User btkh logged in
+[2024-12-29 20:04:41]  |  Sent friend list to btkh
+
+[2024-12-29 20:04:46]  |  User btkh disconnected
+[2024-12-29 20:05:08]  |  User btkh logged in
+[2024-12-29 20:05:08]  |  Sent friend list to btkh
+
+[2024-12-29 20:05:16]  |  User btkh disconnected
+[2024-12-29 20:06:01]  |  User btkh logged in
+[2024-12-29 20:06:02]  |  Sent friend list to btkh
+
+[2024-12-29 20:07:33]  |  User btkh logged in
+[2024-12-29 20:07:34]  |  Sent friend list to btkh
+
+[2024-12-29 20:07:37]  |  User btkh logged out
+[2024-12-29 20:07:38]  |  User btkh logged in
+[2024-12-29 20:07:38]  |  Sent friend list to btkh
+
+[2024-12-29 20:07:46]  |  User btkh disconnected
+[2024-12-29 20:08:28]  |  User btkh logged in
+[2024-12-29 20:08:28]  |  Sent friend list to btkh
+
+[2024-12-29 20:08:32]  |  User btkh logged out
+[2024-12-29 20:11:34]  |  User btkh logged in
+[2024-12-29 20:11:34]  |  Sent friend list to btkh
+
+[2024-12-29 20:11:45]  |  User btkh disconnected
+[2024-12-29 20:15:39]  |  User btkh logged in
+[2024-12-29 20:15:39]  |  Sent friend list to btkh
+
+[2024-12-29 20:15:49]  |  User btkh logged out
+[2024-12-29 20:17:34]  |  User btkh logged in
+[2024-12-29 20:17:34]  |  Sent friend list to btkh
+
+[2024-12-29 20:17:46]  |  User btkh logged out
+[2024-12-29 20:17:47]  |  User btkh logged in
+[2024-12-29 20:17:48]  |  Sent friend list to btkh
+
+[2024-12-29 20:19:00]  |  User btkh logged in
+[2024-12-29 20:19:00]  |  Sent friend list to btkh
+
+[2024-12-29 20:19:03]  |  Sent friend list to btkh
+
+[2024-12-29 20:19:14]  |  User btkh disconnected
+[2024-12-29 20:20:02]  |  User btkh logged in
+[2024-12-29 20:20:08]  |  User btkh disconnected
+[2024-12-29 20:20:55]  |  User btkh logged in
+[2024-12-29 20:20:55]  |  Sent friend list to btkh
+
+[2024-12-29 20:21:09]  |  Sent private message history to btkh
+[2024-12-29 20:21:11]  |  User btkh sent a private message to nam
+[2024-12-29 20:21:30]  |  User nam logged in
+[2024-12-29 20:21:30]  |  Sent friend list to nam
+
+[2024-12-29 20:21:51]  |  User nam logged out
+[2024-12-29 20:21:55]  |  User btkh disconnected
+[2024-12-29 20:23:25]  |  User btkh logged in
+[2024-12-29 20:23:25]  |  Sent friend list to btkh
+
+[2024-12-29 20:23:43]  |  User nam logged in
+[2024-12-29 20:23:43]  |  Sent friend list to nam
+
+[2024-12-29 20:23:54]  |  Sent private message history to nam
+[2024-12-29 20:23:59]  |  User nam sent a private message to btkh
+[2024-12-29 20:24:32]  |  Sent private message history to nam
+[2024-12-29 20:25:48]  |  User nam logged out
+[2024-12-29 20:25:50]  |  User btkh logged out
+[2024-12-29 20:30:11]  |  User btkh logged in
+[2024-12-29 20:30:11]  |  Sent friend list to btkh
+
+[2024-12-29 20:30:20]  |  User btkh logged out
+[2024-12-29 20:30:21]  |  User btkh logged in
+[2024-12-29 20:30:21]  |  Sent friend list to btkh
+
+[2024-12-29 20:30:30]  |  User btkh logged out
+[2024-12-29 20:30:31]  |  User btkh logged in
+[2024-12-29 20:30:32]  |  Sent friend list to btkh
+
+[2024-12-29 20:31:47]  |  User btkh logged out
+[2024-12-29 20:31:49]  |  User btkh logged in
+[2024-12-29 20:31:49]  |  Sent friend list to btkh
+
+[2024-12-29 20:43:49]  |  User btkh logged in
+[2024-12-29 20:43:49]  |  Sent friend list to btkh
+
+[2024-12-29 20:43:53]  |  User btkh disconnected
+[2024-12-29 20:50:23]  |  User btkh logged in
+[2024-12-29 20:50:23]  |  Sent friend list to btkh
+
+[2024-12-29 20:54:52]  |  User btkh logged in
+[2024-12-29 20:54:52]  |  Sent friend list to btkh
+
+[2024-12-29 20:54:55]  |  User btkh disconnected
+[2024-12-29 20:55:23]  |  User btkh logged in
+[2024-12-29 20:55:23]  |  Sent friend list to btkh
+
+[2024-12-29 20:55:28]  |  User btkh logged out
+[2024-12-29 20:55:29]  |  User btkh logged in
+[2024-12-29 20:55:30]  |  Sent friend list to btkh
+
+[2024-12-29 20:55:33]  |  User btkh disconnected
