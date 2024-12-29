@@ -384,6 +384,16 @@ void on_login_button_clicked(GtkWidget *widget, gpointer data)
             gtk_widget_hide(login_window);
             gtk_widget_show_all(chat_window);
 
+            // Ensure Chat tab and sidebar are displayed
+            gtk_widget_hide(friend_vbox);
+            gtk_widget_hide(friend_sidebar);
+            gtk_widget_hide(group_vbox);
+            gtk_widget_hide(group_sidebar);
+            gtk_widget_show_all(chat_vbox);
+            gtk_widget_show_all(chat_sidebar);
+            current_vbox = chat_vbox;
+
+            // Request friends list after successful login
             Message friends_list_msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)"", 0);
             if (send_message(sockfd, &friends_list_msg) < 0)
             {
@@ -454,17 +464,54 @@ void on_register_button_clicked(GtkWidget *widget, gpointer data)
 // Function to handle logout button click
 void on_logout_button_clicked(GtkWidget *widget, gpointer data)
 {
+    // Send logout message to the server
     Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout", 6);
     if (send_message(sockfd, &msg) < 0)
     {
         g_print("Logout failed\n");
     }
-    else
+
+    // Clear the chat window
+    clear_chat_window();
+
+    // Reset the recipient entry
+    gtk_entry_set_text(GTK_ENTRY(recipient_entry), "");
+
+    // Reset friends list
+    if (current_friends_list)
     {
-        clear_chat_window();
-        gtk_widget_hide(chat_window);
-        gtk_widget_show_all(login_window);
+        free(current_friends_list);
+        current_friends_list = NULL;
     }
+    gtk_container_foreach(GTK_CONTAINER(friends_list_box), (GtkCallback)gtk_widget_destroy, NULL);
+
+    // Reset login state
+    is_logged_in = 0;
+
+    // Reset global widgets and states
+    gtk_widget_hide(chat_window);
+    gtk_widget_show_all(login_window);
+
+    // Hide all sidebars and reset active tab
+    gtk_widget_hide(chat_sidebar);
+    gtk_widget_hide(friend_sidebar);
+    gtk_widget_hide(group_sidebar);
+    gtk_widget_set_name(current_vbox, "tab_button");
+    gtk_widget_hide(friend_vbox);
+    gtk_widget_hide(group_vbox);
+    gtk_widget_show_all(chat_vbox);
+    current_vbox = chat_vbox;
+
+    // Set the active tab button to Chat
+    GtkWidget *parent = gtk_widget_get_parent(widget);
+    GList *children = gtk_container_get_children(GTK_CONTAINER(parent));
+    for (GList *iter = children; iter != NULL; iter = g_list_next(iter))
+    {
+        GtkWidget *button = GTK_WIDGET(iter->data);
+        gtk_widget_set_name(button, "tab_button");
+    }
+    g_list_free(children);
+    gtk_widget_set_name(chat_sidebar, "active_tab_button");
 }
 
 // Function to handle application exit
@@ -490,7 +537,7 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
     gtk_widget_show_all(GTK_WIDGET(vbox));
     current_vbox = GTK_WIDGET(vbox);
 
-    // Reset all tab buttons to normal color
+    // Reset all tab buttons to normal style
     GtkWidget *parent = gtk_widget_get_parent(widget);
     GList *children = gtk_container_get_children(GTK_CONTAINER(parent));
     for (GList *iter = children; iter != NULL; iter = g_list_next(iter))
@@ -594,6 +641,7 @@ GtkWidget *create_chat_window()
     GtkWidget *friend_icon = gtk_button_new_with_label("Friend");
     GtkWidget *group_icon = gtk_button_new_with_label("Group");
     GtkWidget *logout_icon = gtk_button_new_with_label("Logout");
+    gtk_widget_set_name(chat_icon, "active_tab_button");
 
     gtk_box_pack_start(GTK_BOX(tab_bar), chat_icon, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(tab_bar), friend_icon, FALSE, FALSE, 0);
@@ -615,15 +663,15 @@ GtkWidget *create_chat_window()
     friends_list_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(chat_sidebar), friends_list_box, TRUE, TRUE, 0);
 
-    // Friend sidebar
-    friend_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_widget_set_size_request(friend_sidebar, 150, -1);
-    gtk_box_pack_start(GTK_BOX(hbox), friend_sidebar, FALSE, FALSE, 0);
+    // // Friend sidebar
+    // friend_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    // gtk_widget_set_size_request(friend_sidebar, 150, -1);
+    // gtk_box_pack_start(GTK_BOX(hbox), friend_sidebar, FALSE, FALSE, 0);
 
-    // Group sidebar
-    group_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_widget_set_size_request(group_sidebar, 150, -1);
-    gtk_box_pack_start(GTK_BOX(hbox), group_sidebar, FALSE, FALSE, 0);
+    // // Group sidebar
+    // group_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    // gtk_widget_set_size_request(group_sidebar, 150, -1);
+    // gtk_box_pack_start(GTK_BOX(hbox), group_sidebar, FALSE, FALSE, 0);
 
     // Chat vbox
     chat_vbox = create_chat_tab();
@@ -665,13 +713,12 @@ void apply_css()
                                     "  font-size: 14px;"
                                     "}"
                                     "GtkButton {"
-                                    "  background-color: #4CAF50;"
                                     "  color: white;"
                                     "  border-radius: 5px;"
                                     "  padding: 5px;"
                                     "}"
                                     "#active_tab_button {"
-                                    "  background-color: #388E3C;"
+                                    "  font-weight: bold;"
                                     "}"
                                     "#tab_bar {"
                                     "  background-color: #333;"
@@ -680,10 +727,6 @@ void apply_css()
                                     "GtkEntry {"
                                     "  border: 1px solid #ccc;"
                                     "  padding: 5px;"
-                                    "}"
-                                    "GtkListBox {"
-                                    "  background-color: #f4f4f4;"
-                                    "  border: 1px solid #ddd;"
                                     "}",
                                     -1, NULL);
 
