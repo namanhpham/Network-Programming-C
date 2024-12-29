@@ -162,7 +162,8 @@ void init_db(PGconn *conn)
         "user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
         "accepted_at TIMESTAMP, "
         "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
-        "PRIMARY KEY (user_id, friend_requested_user_id));";
+        "PRIMARY KEY (user_id, friend_requested_user_id), "
+        "CONSTRAINT unique_friendship_pair UNIQUE (user_id, friend_requested_user_id));";
 
     // Create tables
     create_or_update_table(conn, "users", user_table_create);
@@ -171,4 +172,26 @@ void init_db(PGconn *conn)
     create_or_update_table(conn, "friendship", friendship_table_create);
     create_or_update_table(conn, "group_members", group_members_table_create);
     update_table(conn, "group_members", group_members_table_alter);
+}
+
+PGresult* get_user_by_username(PGconn *conn, const char *username)
+{
+    const char *paramValues[1] = {username};
+    PGresult *res = PQexecParams(conn,
+                                 "SELECT * FROM users WHERE name = $1",
+                                 1,       /* one param */
+                                 NULL,    /* let the backend deduce param type */
+                                 paramValues,
+                                 NULL,    /* don't need param lengths since text */
+                                 NULL,    /* default to all text params */
+                                 0);      /* ask for binary results */
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Get user by username failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        return NULL;
+    }
+
+    return res;
 }

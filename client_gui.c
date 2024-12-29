@@ -63,7 +63,7 @@ void *receive_messages(void *arg)
             exit(EXIT_FAILURE);
         }
 
-        if (msg.type == RESP_SUCCESS || msg.type == RESP_REGISTER_SUCCESS)
+        if (msg.type == RESP_LOGIN_SUCCESS || msg.type == RESP_REGISTER_SUCCESS)
         {
             is_logged_in = 1;
         }

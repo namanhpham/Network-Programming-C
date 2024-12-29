@@ -38,10 +38,12 @@
 #define MSG_PRIVATE_MSG_HISTORY 0x32     // Lịch sử tin nhắn riêng tư
 
 // Mã phản hồi (Response Codes)
-#define RESP_SUCCESS 0x20          // Thông điệp thành công
-#define RESP_FAILURE 0x21          // Thông điệp thất bại
+#define RESP_LOGIN_SUCCESS 0x20    // Thông điệp thành công
+#define RESP_LOGIN_FAILURE 0x21    // Thông điệp thất bại
 #define RESP_FRIEND_LIST 0x22      // Danh sách bạn bè và trạng thái
 #define RESP_REGISTER_SUCCESS 0x23 // Đăng ký tài khoản thành công
+#define RESP_SUCCESS 0x24          // Thành công
+#define RESP_FAILURE 0x25          // Thất bại
 
 #define RESP_LEAVE_GROUP 0x33         // Thông báo rời nhóm chat
 #define RESP_REMOVE_GROUP_MEMBER 0x34 // Thông báo xóa thành viên khỏi nhóm chat

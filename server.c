@@ -77,22 +77,22 @@ void *handle_client(void *arg)
             handle_private_message(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REQUEST:
-            handle_friend_request(client, (char *)message.payload);
+            handle_send_friend_request(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REQUEST_ACCEPTED:
-            handle_accept_friend_request(client->socket, (char *)message.payload);
+            handle_accept_friend_request(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REQUEST_DECLINED:
-            handle_decline_friend_request(client->socket, (char *)message.payload);
+            handle_decline_friend_request(client, (char *)message.payload, conn);
             break;
         case MSG_FRIEND_REMOVED:
-            handle_remove_friend(client->socket, (char *)message.payload);
+            handle_remove_friend(client, (char *)message.payload, conn);
             break;
         case MSG_FRIENDS_LIST:
-            handle_get_friends_list(client->socket);
+            handle_see_friend_list(client->socket, conn);
             break;
         case MSG_FRIEND_REQUEST_LIST:
-            handle_see_friend_request(client->socket);
+            handle_see_friend_request(client->socket, conn);
             break;
         case MSG_LOGOUT:
             printf("User logging out\n");
