@@ -13,7 +13,7 @@ void handle_register(int client_socket, const char *payload, PGconn *conn)
 
     if (username_exists(conn, username))
     {
-        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Username already exists", 23);
+        Message msg = create_message(RESP_LOGIN_FAILURE, (uint8_t *)"Username already exists", 23);
         send_message(client_socket, &msg);
         return;
     }
@@ -25,7 +25,7 @@ void handle_register(int client_socket, const char *payload, PGconn *conn)
     }
     else
     {
-        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Registration failed", 19);
+        Message msg = create_message(RESP_LOGIN_FAILURE, (uint8_t *)"Registration failed", 19);
         send_message(client_socket, &msg);
     }
 }
@@ -40,7 +40,7 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
         Client *existing_client = get_online_client_by_username(username);
         if (existing_client)
         {
-            Message msg = create_message(RESP_FAILURE, (uint8_t *)"User already logged in", 22);
+            Message msg = create_message(RESP_LOGIN_FAILURE, (uint8_t *)"User already logged in", 22);
             send_message(client_socket, &msg);
             return;
         }
@@ -79,7 +79,7 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
                                0);      /* ask for binary results */
             PQclear(res);
 
-            Message msg = create_message(RESP_SUCCESS, (uint8_t *)"Login successful", 16);
+            Message msg = create_message(RESP_LOGIN_SUCCESS, (uint8_t *)"Login successful", 16);
             send_message(client_socket, &msg);
 
             // Notify all clients of the updated online user list
@@ -94,7 +94,7 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
     }
     else
     {
-        Message msg = create_message(RESP_FAILURE, (uint8_t *)"Invalid credentials", 19);
+        Message msg = create_message(RESP_LOGIN_FAILURE, (uint8_t *)"Invalid credentials", 19);
         send_message(client_socket, &msg);
     }
 }
