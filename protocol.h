@@ -36,7 +36,7 @@
 #define MSG_JOIN_GROUP 0x30              // Tham gia nhóm chat.
 #define MSG_LIST_GROUPS 0x31             // Lấy danh sách các nhóm chat.
 #define MSG_PRIVATE_MSG_HISTORY 0x32     // Lịch sử tin nhắn riêng tư
-
+#define MSG_SEE_JOINED_GROUPS 0x35       // Xem các nhóm đã tham gia
 // Mã phản hồi (Response Codes)
 #define RESP_LOGIN_SUCCESS 0x20    // Thông điệp thành công
 #define RESP_LOGIN_FAILURE 0x21    // Thông điệp thất bại
@@ -47,6 +47,7 @@
 
 #define RESP_LEAVE_GROUP 0x33         // Thông báo rời nhóm chat
 #define RESP_REMOVE_GROUP_MEMBER 0x34 // Thông báo xóa thành viên khỏi nhóm chat
+#define RESP_SEE_JOINED_GROUPS 0x36   // Xem các nhóm đã tham gia
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)
 

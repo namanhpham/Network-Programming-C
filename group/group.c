@@ -9,35 +9,35 @@ Group *groups[MAX_GROUPS] = {0}; // Define groups here
 void handle_group_message(Client *client, const char *group_name, const char *message)
 {
     Group *group = get_group_by_name(client->conn, group_name);
-    if (group)
-    {
-        // Add message to the database
-        add_group_message_record(client->conn, group->id, client->user_id, message);
-
-        for (int j = 0; j < MAX_CLIENTS; j++)
-        {
-            if (group->members[j] && group->members[j] != client)
-            {
-                const char *user_name = client->username;
-                // Reallocate buffer if necessary
-                size_t new_size = strlen(message) + strlen(user_name) + strlen(group_name) + 7;
-                char *new_message = (char *)malloc(new_size);
-                strcat(new_message, "[");
-                strcat(new_message, group_name);
-                strcat(new_message, "] ");
-                strcat(new_message, user_name);
-                strcat(new_message, ": ");
-                strcat(new_message, message);
-                Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)new_message, strlen(new_message));
-                send_message(group->members[j]->socket, &msg);
-            }
-        }
-        log_file("Group message sent by %s to group '%s'\n", client->username, group_name);
-    }
-    else
+    if (!group)
     {
         printf("Group '%s' not found.\n", group_name);
+        return;
     }
+
+    // Add message to the database
+    add_group_message_record(client->conn, group->id, client->user_id, message);
+    for (int j = 0; j < MAX_CLIENTS; j++)
+    {
+        if (group->members[j])
+        {
+            const char *user_name = client->username;
+            printf("Sending message to %s\n", group->members[j]->username);
+            // Reallocate buffer if necessary
+            size_t new_size = strlen(message) + strlen(user_name) + strlen(group_name) + 7;
+            char *new_message = (char *)malloc(new_size);
+            strcat(new_message, "[");
+            strcat(new_message, group_name);
+            strcat(new_message, "] ");
+            strcat(new_message, user_name);
+            strcat(new_message, ": ");
+            strcat(new_message, message);
+            Message msg = create_message(MSG_GROUP_MSG, (uint8_t *)new_message, strlen(new_message));
+            send_message(group->members[j]->socket, &msg);
+        }
+    }
+    log_file("Group message sent by %s to group '%s'\n", client->username, group_name);
+    printf("Group message sent by %s to group '%s'\n", client->username, group_name);
 }
 
 void handle_create_group(Client *client, const char *group_name)
@@ -49,6 +49,7 @@ void handle_create_group(Client *client, const char *group_name)
             groups[i] = malloc(sizeof(Group));
             strncpy(groups[i]->name, group_name, sizeof(groups[i]->name));
             groups[i]->members[0] = client;
+            add_group_record(client->conn, group_name, client->user_id);
             printf("Group '%s' created by %s\n", group_name, client->username);
             log_file("Group '%s' created by %s\n", group_name, client->username);
             return;
@@ -58,13 +59,13 @@ void handle_create_group(Client *client, const char *group_name)
 
 Group *get_group_by_name(PGconn *conn, const char *group_name)
 {
-    for (int i = 0; i < MAX_GROUPS; i++)
-    {
-        if (groups[i] && strcmp(groups[i]->name, group_name) == 0)
-        {
-            return groups[i];
-        }
-    }
+    // for (int i = 0; i < MAX_GROUPS; i++)
+    // {
+    //     if (groups[i] && strcmp(groups[i]->name, group_name) == 0)
+    //     {
+    //         return groups[i];
+    //     }
+    // }
 
     // If not found in memory, check the database
     Group *group = get_group_record(conn, group_name);
@@ -86,25 +87,22 @@ Group *get_group_by_name(PGconn *conn, const char *group_name)
 void handle_join_group(Client *client, const char *group_name)
 {
     Group *group = get_group_by_name(client->conn, group_name);
-    if (group)
-    {
-        for (int j = 0; j < MAX_CLIENTS; j++)
-        {
-            if (group->members[j] == NULL)
-            {
-                group->members[j] = client;
-                printf("%s joined group '%s'\n", client->username, group_name);
-
-                // Add member to the database
-                add_group_member_record(client->conn, group->id, client->user_id);
-                log_file("%s joined group '%s'\n", client->username, group_name);
-                return;
-            }
-        }
-    }
-    else
-    {
+    if (!group){
         printf("Group '%s' not found.\n", group_name);
+        return;
+    }
+    
+    for (int j = 0; j < MAX_CLIENTS; j++)
+    {
+        if (group->members[j] == NULL)
+        {
+            group->members[j] = client;
+            printf("%s joined group '%s'\n", client->username, group_name);
+            // Add member to the database
+            add_group_member_record(client->conn, group->id, client->user_id);
+            log_file("%s joined group '%s'\n", client->username, group_name);
+            return;
+        }
     }
 }
 
@@ -122,6 +120,30 @@ void add_group_record(PGconn *conn, const char *group_name, const char *creator_
     {
         printf("Group '%s' added successfully.\n", group_name);
     }
+    // add group members record
+    const char *paramValues1[1] = {group_name};
+    const char *sql1 = "SELECT id FROM group_table WHERE name = $1;";
+    PGresult *res1 = PQexecParams(conn, sql1, 1, NULL, paramValues1, NULL, NULL, 0);
+    if (PQresultStatus(res1) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Failed to get group id: %s\n", PQerrorMessage(conn));
+        PQclear(res1);
+        return;
+    }
+    const char *group_id = PQgetvalue(res1, 0, 0);
+    PQclear(res1);
+    const char *paramValues2[2] = {group_id, creator_user_id};
+    const char *sql2 = "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2);";
+    PGresult *res2 = PQexecParams(conn, sql2, 2, NULL, paramValues2, NULL, NULL, 0);
+    if (PQresultStatus(res2) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "Failed to add group member record: %s\n", PQerrorMessage(conn));
+    }
+    else
+    {
+        printf("Group member '%s' added successfully.\n", creator_user_id);
+    }
+    PQclear(res2);
     PQclear(res);
 }
 
@@ -334,6 +356,7 @@ void handle_see_group_messages(Client *client, const char *group_name)
         Message end_msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)chunk, strlen(chunk));
         send_message(client->socket, &end_msg);
         log_file("Sent group message history to %s\n", client->username);
+        printf("Sent group message history to %s\n", client->username);
     }
     else
     {
@@ -353,6 +376,7 @@ void set_group_member_deleted_at(PGconn *conn, const char *group_id, const char 
     else
     {
         printf("User '%s' marked as removed from group '%s' successfully.\n", user_id, group_id);
+        log_file("User '%s' marked as removed from group '%s' successfully.\n", user_id, group_id);
     }
     PQclear(res);
 }
@@ -382,6 +406,7 @@ void handle_leave_group(Client *client, const char *group_name)
             }
         }
         log_file("%s left group '%s'\n", client->username, group_name);
+        printf("%s left group '%s'\n", client->username, group_name);
     }
     else
     {
@@ -392,38 +417,66 @@ void handle_leave_group(Client *client, const char *group_name)
 void handle_remove_group_member(Client *client, const char *group_name, const char *member_username)
 {
     Group *group = get_group_by_name(client->conn, group_name);
-    if (group)
+    if (!group){
+        printf("Group '%s' not found.\n", group_name);
+        return;
+    }
+    
+    if (strcmp(group->creator_user_id, client->user_id) != 0)
     {
-        if (strcmp(group->creator_user_id, client->user_id) != 0)
+        char *message = "Only the group creator can remove members.\n";
+        Message msg = create_message(RESP_REMOVE_GROUP_MEMBER, (uint8_t *)message, strlen(message));
+        send_message(client->socket, &msg);
+        return;
+    }
+    for (int j = 0; j < MAX_CLIENTS; j++)
+    {   
+        if (group->members[j])
         {
-            char *message = "Only the group creator can remove members.\n";
+            Client *member = group->members[j];
+            char message[1024] = "";
+            snprintf(message, sizeof(message), "%s removed from group '%s' by %s\n", member_username, group_name, client->username);
             Message msg = create_message(RESP_REMOVE_GROUP_MEMBER, (uint8_t *)message, strlen(message));
-            send_message(client->socket, &msg);
-            return;
-        }
-
-        for (int j = 0; j < MAX_CLIENTS; j++)
-        {
-            if (group->members[j])
+            send_message(group->members[j]->socket, &msg);
+            if (strcmp(group->members[j]->username, member_username) == 0)
             {
-                Client *member = group->members[j];
-
-                char message[1024] = "";
-                snprintf(message, sizeof(message), "%s removed from group '%s' by %s\n", member_username, group_name, client->username);
-                Message msg = create_message(RESP_REMOVE_GROUP_MEMBER, (uint8_t *)message, strlen(message));
-                send_message(group->members[j]->socket, &msg);
-                if (strcmp(group->members[j]->username, member_username) == 0)
-                {
-                    group->members[j] = NULL;
-                    set_group_member_deleted_at(client->conn, group->id, member->user_id);
-                }
+                group->members[j] = NULL;
+                set_group_member_deleted_at(client->conn, group->id, member->user_id);
             }
         }
-        log_file("%s removed %s from group '%s'\n", client->username, member_username, group_name);
+    }
+    log_file("%s removed %s from group '%s'\n", client->username, member_username, group_name);
+    printf("%s removed %s from group '%s'\n", client->username, member_username, group_name);
+}
+
+
+// see joined groups
+void handle_see_joined_groups(Client *client)
+{
+    const char *paramValues[1] = {client->user_id};
+    const char *sql = "SELECT g.name "
+                      "FROM group_table g "
+                      "JOIN group_members gm ON g.id = gm.group_id "
+                      "WHERE gm.user_id = $1 AND gm.deleted_at IS NULL;";
+
+    PGresult *res = PQexecParams(client->conn, sql, 1, NULL, paramValues, NULL, NULL, 0);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Failed to get joined groups: %s\n", PQerrorMessage(client->conn));
+        PQclear(res);
+        return;
     }
 
-    else
+    char group_list[1024] = "";
+    for (int i = 0; i < PQntuples(res); i++)
     {
-        printf("Group '%s' not found.\n", group_name);
+        strcat(group_list, PQgetvalue(res, i, 0));
+        strcat(group_list, ",");
     }
+    PQclear(res);
+
+    Message msg = create_message(RESP_SEE_JOINED_GROUPS, (uint8_t *)group_list, strlen(group_list));
+    send_message(client->socket, &msg);
+    printf("Sent joined group list to %s\n", client->username);
+    log_file("Sent joined group list to %s\n", client->username);
 }

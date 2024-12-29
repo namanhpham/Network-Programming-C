@@ -28,4 +28,5 @@ void handle_see_group_messages(Client *client, const char *group_name);
 void add_group_message_record(PGconn *conn, const char *group_id, const char *user_id, const char *message);
 void handle_leave_group(Client *client, const char *group_name);
 void handle_remove_group_member(Client *client, const char *group_name, const char *member_username);
+void handle_see_joined_groups(Client *client);
 #endif

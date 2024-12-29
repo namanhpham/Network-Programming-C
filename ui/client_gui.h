@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include <pthread.h>
 #include "../protocol.h"
-
+#define CHUNK_SIZE 512
 // Declare external variables
 extern GtkWidget *chat_text_view;
 extern GtkWidget *message_entry;
