@@ -285,6 +285,17 @@ void on_logout_button_clicked(GtkWidget *widget, gpointer data)
     }
 }
 
+// Function to handle application exit
+void on_app_exit()
+{
+    Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
+    if (send_message(sockfd, &msg) < 0)
+    {
+        g_print("Failed to send disconnect message\n");
+    }
+    close(sockfd);
+}
+
 // Function to create the login window
 GtkWidget *create_login_window()
 {
@@ -347,21 +358,18 @@ GtkWidget *create_chat_window()
     gtk_widget_set_size_request(sidebar_list, 150, -1);
     gtk_box_pack_start(GTK_BOX(hbox), sidebar_list, FALSE, FALSE, 0);
 
+    // Recipient bar at the top of the sidebar
+    recipient_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(recipient_entry), "Recipient username");
+    gtk_box_pack_start(GTK_BOX(sidebar_list), recipient_entry, FALSE, FALSE, 0);
+    g_signal_connect(recipient_entry, "changed", G_CALLBACK(on_recipient_entry_changed), NULL);
+
     // Add logout button to the bottom of the sidebar
     GtkWidget *logout_button = gtk_button_new_with_label("Logout");
     gtk_box_pack_end(GTK_BOX(sidebar_list), logout_button, FALSE, FALSE, 0);
 
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, 0);
-
-    // Recipient bar
-    GtkWidget *recipient_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_pack_start(GTK_BOX(vbox), recipient_hbox, FALSE, FALSE, 0);
-
-    recipient_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(recipient_entry), "Recipient username");
-    gtk_box_pack_start(GTK_BOX(recipient_hbox), recipient_entry, TRUE, TRUE, 0);
-    g_signal_connect(recipient_entry, "changed", G_CALLBACK(on_recipient_entry_changed), NULL);
 
     // Chat text view with scroll
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
@@ -437,8 +445,11 @@ int main(int argc, char *argv[])
     chat_window = create_chat_window();
     gtk_widget_show_all(login_window);
 
+    // Connect the application exit event to the on_app_exit function
+    g_signal_connect(G_OBJECT(login_window), "destroy", G_CALLBACK(on_app_exit), NULL);
+    g_signal_connect(G_OBJECT(chat_window), "destroy", G_CALLBACK(on_app_exit), NULL);
+
     gtk_main();
 
-    close(sockfd);
     return 0;
 }
