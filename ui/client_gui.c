@@ -29,8 +29,8 @@ static GtkWidget *group_vbox;
 static GtkWidget *current_vbox;
 
 static GtkWidget *chat_sidebar;
-static GtkWidget *friend_sidebar;
-static GtkWidget *group_sidebar;
+// static GtkWidget *friend_sidebar;
+// static GtkWidget *group_sidebar;
 
 char current_group[256]; // Stores the name of the currently selected group
 static GtkWidget *friends_list_box;
@@ -597,10 +597,10 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
     {
         gtk_widget_show_all(chat_sidebar);
     }
-    else if (vbox == friend_vbox)
-    {
-        gtk_widget_show_all(friend_sidebar);
-    }
+    // else if (vbox == friend_vbox)
+    // {
+    //     gtk_widget_show_all(friend_sidebar);
+    // }
     else if (vbox == group_vbox)
     {
         Message msg = create_message(MSG_SEE_JOINED_GROUPS, (uint8_t *)"List groups", 11);
@@ -608,7 +608,7 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
         {
             perror("Failed to list groups");
         }
-        gtk_widget_show_all(group_sidebar);
+        // gtk_widget_show_all(group_sidebar);
     }
 }
 
@@ -761,6 +761,11 @@ void apply_css()
                                     "#tab_bar {"
                                     "  background-color: #333;"
                                     "  padding: 10px;"
+                                    "}"
+                                    "#friend_sidebar {"
+                                    "  background-color: white;"
+                                    "  padding: 10px;"
+                                    "  border: 1px solid #ccc;"
                                     "}"
                                     "GtkEntry {"
                                     "  border: 1px solid #ccc;"

@@ -148,6 +148,10 @@ void populate_friends_list(const char *friends)
         else
         {
             GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+            gtk_widget_set_margin_top(row, 5);
+            gtk_widget_set_margin_bottom(row, 5);
+            gtk_widget_set_margin_start(row, 10);
+            gtk_widget_set_margin_end(row, 10);
             GtkWidget *label = gtk_label_new(friend);
             gtk_widget_set_halign(label, GTK_ALIGN_START);
 
@@ -200,6 +204,7 @@ void populate_friend_requests(const char *requests)
         if (strncmp(request, "Friend requests number:", 23) == 0)
         {
             // Dòng đặc biệt chỉ hiển thị nhãn, không thêm nút
+            gtk_widget_set_margin_top(row, 10);
             gtk_widget_set_halign(label, GTK_ALIGN_START);
             gtk_box_pack_start(GTK_BOX(row), label, TRUE, TRUE, 0);
         }
@@ -209,6 +214,10 @@ void populate_friend_requests(const char *requests)
             GtkWidget *accept_button = gtk_button_new_with_label("Accept");
             GtkWidget *decline_button = gtk_button_new_with_label("Decline");
 
+            gtk_widget_set_margin_top(row, 5);
+            gtk_widget_set_margin_bottom(row, 5);
+            gtk_widget_set_margin_start(row, 10);
+            gtk_widget_set_margin_end(row, 10);
             gtk_widget_set_halign(label, GTK_ALIGN_START);
             gtk_widget_set_halign(accept_button, GTK_ALIGN_END);
             gtk_widget_set_halign(decline_button, GTK_ALIGN_END);
@@ -269,6 +278,9 @@ GtkWidget *create_friend_tab()
     friend_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_size_request(friend_sidebar, 150, -1);
 
+    // Gán ID cho CSS
+    gtk_widget_set_name(friend_sidebar, "friend_sidebar");
+
     GtkWidget *switch_to_friends_button = gtk_button_new_with_label("Friends List");
     GtkWidget *switch_to_requests_button = gtk_button_new_with_label("Friend Requests");
 
@@ -289,6 +301,10 @@ GtkWidget *create_friend_tab()
 
     // Add search bar and button in a horizontal box
     GtkWidget *search_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_widget_set_margin_top(search_hbox, 10);
+    gtk_widget_set_margin_bottom(search_hbox, 10);
+    gtk_widget_set_margin_start(search_hbox, 10);
+    gtk_widget_set_margin_end(search_hbox, 10);
     search_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Search for a friend...");
     GtkWidget *send_request_button = gtk_button_new_with_label("Send Request");
