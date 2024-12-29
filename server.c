@@ -72,7 +72,6 @@ void *handle_client(void *arg)
             break;
         case MSG_LOGIN:
             handle_login(client->socket, (char *)message.payload, conn);
-            handle_see_friend_list(client->socket, conn);
             break;
         case MSG_PRIVATE_MSG:
             handle_private_message(client, (char *)message.payload, conn);

@@ -12,7 +12,6 @@ extern GtkWidget *message_entry;
 // Function declarations
 void display_message(const char *message);
 void *receive_messages(void *arg);
-void send_message_to_server(GtkWidget *widget, gpointer data);
 void connect_to_server();
 void on_login_button_clicked(GtkWidget *widget, gpointer data);
 GtkWidget *create_login_window();
