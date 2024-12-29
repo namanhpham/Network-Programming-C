@@ -11,6 +11,7 @@
 #define SERVER_PORT 8080
 
 static int sockfd;
+static char *current_friends_list = NULL;
 static pthread_t recv_thread;
 static GtkWidget *login_window;
 static GtkWidget *register_window;
@@ -28,6 +29,7 @@ static GtkWidget *current_vbox;
 static GtkWidget *chat_sidebar;
 static GtkWidget *friend_sidebar;
 static GtkWidget *group_sidebar;
+static GtkWidget *friends_list_box;
 
 // Function to display a message in the chat window
 void display_message(const char *message)
@@ -58,6 +60,55 @@ void clear_chat_window()
 {
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_text_view));
     gtk_text_buffer_set_text(buffer, "", -1);
+}
+
+void on_friend_button_clicked(GtkWidget *widget, gpointer data)
+{
+    const char *friend_name = (const char *)data;
+
+    g_print("Button clicked for friend: %s\n", friend_name);
+
+    gtk_entry_set_text(GTK_ENTRY(recipient_entry), friend_name);
+}
+
+void display_friends_list(const char *friends)
+{
+    // So sánh với danh sách bạn bè hiện tại
+    if (current_friends_list && strcmp(current_friends_list, friends) == 0)
+    {
+        g_print("Friends list unchanged, skipping update.\n");
+        return; // Không cần cập nhật
+    }
+
+    // Cập nhật danh sách bạn bè hiện tại
+    if (current_friends_list)
+    {
+        free(current_friends_list);
+    }
+    current_friends_list = strdup(friends);
+
+    // Xóa toàn bộ các widget con trong friends_list_boxs
+    gtk_container_foreach(GTK_CONTAINER(friends_list_box), (GtkCallback)gtk_widget_destroy, NULL);
+
+    char *friends_copy = strdup(friends);
+    char *friend = strtok(friends_copy, "\n");
+    while (friend != NULL)
+    {
+        if (strncmp(friend, "Friend numbers:", 15) != 0)
+        {
+            GtkWidget *button = gtk_button_new_with_label(friend);
+
+            // Kết nối tín hiệu clicked cho nút
+            g_signal_connect(button, "clicked", G_CALLBACK(on_friend_button_clicked), g_strdup(friend));
+            g_print("Connected signal for friend: %s\n", friend);
+
+            gtk_box_pack_start(GTK_BOX(friends_list_box), button, FALSE, FALSE, 0);
+        }
+        friend = strtok(NULL, "\n");
+    }
+    free(friends_copy);
+
+    gtk_widget_show_all(friends_list_box);
 }
 
 // Function to handle received messages
@@ -91,6 +142,16 @@ void *receive_messages(void *arg)
             break;
         case MSG_LOGOUT:
             break;
+        case MSG_FRIENDS_LIST:
+        {
+            char *friends_data = g_strdup((char *)msg.payload);
+
+            g_idle_add((GSourceFunc)display_friends_list, friends_data);
+
+            g_print("Friends list received: %s\n", friends_data);
+            break;
+        }
+
         default:
             g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
             break;
@@ -142,15 +203,17 @@ void see_private_messages(GtkWidget *widget, gpointer data)
 // Function to handle recipient entry change
 void on_recipient_entry_changed(GtkWidget *widget, gpointer data)
 {
-    clear_chat_window(); // Clear chat window on recipient change
-    const char *friend_username = gtk_entry_get_text(GTK_ENTRY(recipient_entry));
-
-    if (strlen(friend_username) > 0)
+    if (widget == recipient_entry)
     {
-        Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
-        if (send_message(sockfd, &msg) < 0)
+        clear_chat_window();
+        const char *friend_username = gtk_entry_get_text(GTK_ENTRY(recipient_entry));
+        if (strlen(friend_username) > 0)
         {
-            g_print("Failed to see private messages\n");
+            Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
+            if (send_message(sockfd, &msg) < 0)
+            {
+                g_print("Failed to see private messages\n");
+            }
         }
     }
 }
@@ -218,6 +281,12 @@ void on_login_button_clicked(GtkWidget *widget, gpointer data)
         {
             gtk_widget_hide(login_window);
             gtk_widget_show_all(chat_window);
+
+            Message friends_list_msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)"", 0);
+            if (send_message(sockfd, &friends_list_msg) < 0)
+            {
+                g_print("Failed to request friends list\n");
+            }
         }
         else
         {
@@ -290,7 +359,7 @@ void on_logout_button_clicked(GtkWidget *widget, gpointer data)
     }
     else
     {
-        clear_chat_window(); // Clear chat window on logout
+        clear_chat_window();
         gtk_widget_hide(chat_window);
         gtk_widget_show_all(login_window);
     }
@@ -299,6 +368,11 @@ void on_logout_button_clicked(GtkWidget *widget, gpointer data)
 // Function to handle application exit
 void on_app_exit()
 {
+    if (current_friends_list)
+    {
+        free(current_friends_list);
+    }
+
     Message msg = create_message(MSG_DISCONNECT, (uint8_t *)"Disconnecting", 12);
     if (send_message(sockfd, &msg) < 0)
     {
@@ -429,6 +503,10 @@ GtkWidget *create_chat_window()
     gtk_entry_set_placeholder_text(GTK_ENTRY(recipient_entry), "Recipient username");
     gtk_box_pack_start(GTK_BOX(chat_sidebar), recipient_entry, FALSE, FALSE, 0);
     g_signal_connect(recipient_entry, "changed", G_CALLBACK(on_recipient_entry_changed), NULL);
+
+    // Friends list box
+    friends_list_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_box_pack_start(GTK_BOX(chat_sidebar), friends_list_box, TRUE, TRUE, 0);
 
     // Friend sidebar
     friend_sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
