@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Group *groups[MAX_CLIENTS] = {0}; // Define groups here
+Group *groups[MAX_GROUPS] = {0}; // Define groups here
 
 void handle_group_message(Client *client, const char *group_name, const char *message)
 {
@@ -32,6 +32,7 @@ void handle_group_message(Client *client, const char *group_name, const char *me
                 send_message(group->members[j]->socket, &msg);
             }
         }
+        log_file("Group message sent by %s to group '%s'\n", client->username, group_name);
     }
     else
     {
@@ -41,7 +42,7 @@ void handle_group_message(Client *client, const char *group_name, const char *me
 
 void handle_create_group(Client *client, const char *group_name)
 {
-    for (int i = 0; i < MAX_CLIENTS; i++)
+    for (int i = 0; i < MAX_GROUPS; i++)
     {
         if (groups[i] == NULL)
         {
@@ -49,6 +50,7 @@ void handle_create_group(Client *client, const char *group_name)
             strncpy(groups[i]->name, group_name, sizeof(groups[i]->name));
             groups[i]->members[0] = client;
             printf("Group '%s' created by %s\n", group_name, client->username);
+            log_file("Group '%s' created by %s\n", group_name, client->username);
             return;
         }
     }
@@ -56,7 +58,7 @@ void handle_create_group(Client *client, const char *group_name)
 
 Group *get_group_by_name(PGconn *conn, const char *group_name)
 {
-    for (int i = 0; i < MAX_CLIENTS; i++)
+    for (int i = 0; i < MAX_GROUPS; i++)
     {
         if (groups[i] && strcmp(groups[i]->name, group_name) == 0)
         {
@@ -68,7 +70,7 @@ Group *get_group_by_name(PGconn *conn, const char *group_name)
     Group *group = get_group_record(conn, group_name);
     if (group)
     {
-        for (int i = 0; i < MAX_CLIENTS; i++)
+        for (int i = 0; i < MAX_GROUPS; i++)
         {
             if (groups[i] == NULL)
             {
@@ -95,7 +97,7 @@ void handle_join_group(Client *client, const char *group_name)
 
                 // Add member to the database
                 add_group_member_record(client->conn, group->id, client->user_id);
-
+                log_file("%s joined group '%s'\n", client->username, group_name);
                 return;
             }
         }
@@ -282,6 +284,7 @@ void handle_list_groups(Client *client)
 
     Message msg = create_message(MSG_LIST_GROUPS, (uint8_t *)group_list, strlen(group_list));
     send_message(client->socket, &msg);
+    log_file("Sent group list to %s\n", client->username);
 }
 
 void handle_see_group_messages(Client *client, const char *group_name)
@@ -330,6 +333,7 @@ void handle_see_group_messages(Client *client, const char *group_name)
 
         Message end_msg = create_message(MSG_GROUP_MSG_HISTORY, (uint8_t *)chunk, strlen(chunk));
         send_message(client->socket, &end_msg);
+        log_file("Sent group message history to %s\n", client->username);
     }
     else
     {
@@ -377,6 +381,7 @@ void handle_leave_group(Client *client, const char *group_name)
                 send_message(group->members[j]->socket, &msg);
             }
         }
+        log_file("%s left group '%s'\n", client->username, group_name);
     }
     else
     {
@@ -414,6 +419,7 @@ void handle_remove_group_member(Client *client, const char *group_name, const ch
                 }
             }
         }
+        log_file("%s removed %s from group '%s'\n", client->username, member_username, group_name);
     }
 
     else

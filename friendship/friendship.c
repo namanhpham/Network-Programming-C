@@ -140,6 +140,7 @@ void handle_send_friend_request(Client *client, const char *payload, PGconn *con
             }
         }
         printf("Friend request sent from %s to %s\n", client->username, friend_username);
+        log_file("Friend request sent from %s to %s\n", client->username, friend_username);
     }
     else
     {
@@ -209,6 +210,7 @@ void handle_accept_friend_request(Client *client, const char *payload, PGconn *c
     {
         Message response = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)client->username, strlen(client->username));
         send_message(friend_client->socket, &response);
+        log_file("Friend request accepted from %s to %s\n", client->username, friend_username);
     }
 
     PQclear(res);
@@ -273,6 +275,7 @@ void handle_decline_friend_request(Client *client, const char *payload, PGconn *
     {
         Message response = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)client->username, strlen(client->username));
         send_message(friend_client->socket, &response);
+        log_file("Friend request declined from %s to %s\n", client->username, friend_username);
     }
 
     PQclear(res);
@@ -315,7 +318,7 @@ void handle_see_friend_request(int client_socket, PGconn *conn)
         Message friend_request_msg = create_message(MSG_FRIEND_REQUEST_LIST, (uint8_t *)friend_requests_list, strlen(friend_requests_list));
         send_message(client_socket, &friend_request_msg);
         printf("Sent friend requests list to %s\n", client->username);
-
+        log_file("Sent friend requests list to %s\n", client->username);
         PQclear(res);
     }
 }
@@ -382,7 +385,7 @@ void handle_see_friend_list(int client_socket, PGconn *conn)
         Message friend_list_msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)friend_list, strlen(friend_list));
         send_message(client_socket, &friend_list_msg);
         printf("Sent friend list to %s\n", client->username);
-
+        log_file("Sent friend list to %s\n", client->username);
         PQclear(res);
     }
 }
@@ -429,6 +432,7 @@ void handle_remove_friend(Client *client, const char *payload, PGconn *conn)
     {
         Message response = create_message(MSG_FRIEND_REMOVED, (uint8_t *)client->username, strlen(client->username));
         send_message(friend_client->socket, &response);
+        log_file("%s removed %s from friends\n", client->username, friend_username);
     }
 
     Message response = create_message(RESP_SUCCESS, (uint8_t *)"Friend removed successfully", 27);

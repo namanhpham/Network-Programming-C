@@ -5,6 +5,7 @@
 #include <libpq-fe.h>
 
 #define MAX_CLIENTS 10
+#define MAX_GROUPS 100
 
 // Khai báo các mảng clients.
 extern Client *clients[MAX_CLIENTS];

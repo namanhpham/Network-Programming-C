@@ -64,6 +64,7 @@ void handle_private_message(Client *client, char *payload, PGconn *conn)
     {
         fprintf(stderr, "Save message failed: %s", PQerrorMessage(conn));
     }
+    log_file("User %s sent a private message to %s", client->username, receiver_username);
     PQclear(res);
     PQclear(user_res);
     PQclear(receiver_res);
@@ -123,6 +124,7 @@ void handle_see_private_messages(Client *client, char *payload, PGconn *conn)
 
     Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)history, strlen(history));
     send_message(client->socket, &msg);
+    log_file("Sent private message history to %s", client->username);
 
     PQclear(message_res);
     PQclear(receiver_res);

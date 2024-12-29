@@ -3,6 +3,7 @@
 
 #include "../protocol.h" // File này sẽ chứa hàm send_message, create_message, v.v. nếu cần
 #include "../common.h"
+#include "../utils.h"
 #define CHUNK_SIZE 512
 
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
     Client *members[MAX_CLIENTS];
 } Group;
 
-extern Group *groups[MAX_CLIENTS];
+extern Group *groups[MAX_GROUPS];
 
 void handle_join_group(Client *client, const char *group_name);
 void handle_create_group(Client *client, const char *group_name);

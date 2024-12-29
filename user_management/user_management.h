@@ -3,6 +3,7 @@
 
 #include "../protocol.h"
 #include <libpq-fe.h>
+#include "../utils.h"
 
 void handle_register(int client_socket, const char *payload, PGconn *conn);
 void handle_login(int client_socket, const char *payload, PGconn *conn);
