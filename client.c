@@ -83,6 +83,9 @@ void *receive_messages(void *arg)
             printf("%s\n", (char *)msg.payload);
             break;
         }
+        case MSG_PRIVATE_MSG_HISTORY:
+            printf("Private message history:\n%s\n", (char *)msg.payload);
+            break;
         default:
             printf("Unknown message type received.\n");
             break;
@@ -334,6 +337,20 @@ void remove_group_members(int sockfd)
         perror("Failed to remove group members");
     }
 }
+
+void see_private_messages(int sockfd)
+{
+    char friend_username[128];
+    printf("Enter friend's username to see message history: ");
+    scanf("%127s", friend_username);
+
+    Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
+    if (send_message(sockfd, &msg) < 0)
+    {
+        perror("Failed to see private messages");
+    }
+}
+
 int main()
 {
     int sockfd = connect_to_server();
@@ -355,7 +372,7 @@ int main()
 
         if (logged_in)
         {
-            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members): ");
+            printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members, 15: see private messages): ");
         }
         else
         {
@@ -443,6 +460,9 @@ int main()
             break;
         case 14:
             remove_group_members(sockfd);
+            break;
+        case 15:
+            see_private_messages(sockfd);
             break;
 
         default:

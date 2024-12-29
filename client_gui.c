@@ -29,6 +29,26 @@ void display_message(const char *message)
     gtk_text_buffer_insert(buffer, &end, "\n", -1);
 }
 
+// Function to display a message in the chat window with sender's name
+void display_message_with_sender(const char *sender, const char *message)
+{
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_text_view));
+    GtkTextIter end;
+
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    gtk_text_buffer_insert(buffer, &end, sender, -1);
+    gtk_text_buffer_insert(buffer, &end, ": ", -1);
+    gtk_text_buffer_insert(buffer, &end, message, -1);
+    gtk_text_buffer_insert(buffer, &end, "\n", -1);
+}
+
+// Function to clear the chat window
+void clear_chat_window()
+{
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_text_view));
+    gtk_text_buffer_set_text(buffer, "", -1);
+}
+
 // Function to handle received messages
 void *receive_messages(void *arg)
 {
@@ -52,7 +72,18 @@ void *receive_messages(void *arg)
             is_logged_in = 0;
         }
 
-        g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
+        switch (msg.type)
+        {
+        case MSG_PRIVATE_MSG_HISTORY:
+        case MSG_PRIVATE_MSG:
+            g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
+            break;
+        case MSG_LOGOUT:
+            break;
+        default:
+            g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
+            break;
+        }
     }
     return NULL;
 }
@@ -79,6 +110,37 @@ void send_message_to_user(GtkWidget *widget, gpointer data)
     else
     {
         g_print("Recipient or message cannot be empty\n");
+    }
+}
+
+// Function to request and display private message history
+void see_private_messages(GtkWidget *widget, gpointer data)
+{
+    const char *friend_username = gtk_entry_get_text(GTK_ENTRY(recipient_entry));
+
+    if (strlen(friend_username) > 0)
+    {
+        Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
+        if (send_message(sockfd, &msg) < 0)
+        {
+            g_print("Failed to see private messages\n");
+        }
+    }
+}
+
+// Function to handle recipient entry change
+void on_recipient_entry_changed(GtkWidget *widget, gpointer data)
+{
+    clear_chat_window(); // Clear chat window on recipient change
+    const char *friend_username = gtk_entry_get_text(GTK_ENTRY(recipient_entry));
+
+    if (strlen(friend_username) > 0)
+    {
+        Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
+        if (send_message(sockfd, &msg) < 0)
+        {
+            g_print("Failed to see private messages\n");
+        }
     }
 }
 
@@ -217,6 +279,7 @@ void on_logout_button_clicked(GtkWidget *widget, gpointer data)
     }
     else
     {
+        clear_chat_window(); // Clear chat window on logout
         gtk_widget_hide(chat_window);
         gtk_widget_show_all(login_window);
     }
@@ -298,10 +361,17 @@ GtkWidget *create_chat_window()
     recipient_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(recipient_entry), "Recipient username");
     gtk_box_pack_start(GTK_BOX(recipient_hbox), recipient_entry, TRUE, TRUE, 0);
+    g_signal_connect(recipient_entry, "changed", G_CALLBACK(on_recipient_entry_changed), NULL);
+
+    // Chat text view with scroll
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(scrolled_window, -1, 300); // Fixed height for chat area
 
     chat_text_view = gtk_text_view_new();
     gtk_text_view_set_editable(GTK_TEXT_VIEW(chat_text_view), FALSE);
-    gtk_box_pack_start(GTK_BOX(vbox), chat_text_view, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), chat_text_view);
+    gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
 
     GtkWidget *input_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(vbox), input_hbox, FALSE, FALSE, 0);

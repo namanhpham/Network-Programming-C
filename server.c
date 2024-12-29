@@ -20,6 +20,9 @@
 #define FRIEND_REQUEST_FILE "friend_requests.txt"
 #define CONNECTION_STRING_LENGTH 512
 
+// Function prototypes
+void handle_see_private_messages(Client *client, char *payload, PGconn *conn);
+
 // Hàm để thêm client vào danh sách
 void add_client(Client *client)
 {
@@ -128,6 +131,9 @@ void *handle_client(void *arg)
             handle_remove_group_member(client, group_name, member);
             break;
         }
+        case MSG_PRIVATE_MSG_HISTORY:
+            handle_see_private_messages(client, (char *)message.payload, conn);
+            break;
         }
     }
 
