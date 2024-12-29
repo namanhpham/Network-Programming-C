@@ -22,6 +22,7 @@ void handle_register(int client_socket, const char *payload, PGconn *conn)
     {
         Message msg = create_message(RESP_REGISTER_SUCCESS, (uint8_t *)"Registration successful", 23);
         send_message(client_socket, &msg);
+        log_file("User %s registered", username);
     }
     else
     {
@@ -81,6 +82,7 @@ void handle_login(int client_socket, const char *payload, PGconn *conn)
 
             Message msg = create_message(RESP_LOGIN_SUCCESS, (uint8_t *)"Login successful", 16);
             send_message(client_socket, &msg);
+            log_file("User %s logged in", username);
 
             // Notify all clients of the updated online user list
             for (int i = 0; i < MAX_CLIENTS; i++)
@@ -131,6 +133,7 @@ void handle_logout(int client_socket, PGconn *conn)
         // Send logout success message to the client
         Message msg = create_message(MSG_LOGOUT, (uint8_t *)"Logout successful", 17);
         send_message(client_socket, &msg);
+        log_file("User %s logged out", client->username);
     }
 }
 
@@ -162,5 +165,6 @@ void handle_disconnect(int client_socket, PGconn *conn)
                 send_online_users_list(online_clients[i]->socket);
             }
         }
+        log_file("User %s disconnected", client->username);
     }
 }

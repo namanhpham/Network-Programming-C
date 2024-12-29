@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libpq-fe.h>
+#include <stdarg.h>
+#include <time.h>
 
 void load_env_file(const char *filename)
 {
@@ -194,4 +196,38 @@ PGresult* get_user_by_username(PGconn *conn, const char *username)
     }
 
     return res;
+}
+
+// Hàm log file
+void log_file(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    // Get the current time
+    time_t rawtime;
+    struct tm *timeinfo;
+    char time_buffer[20];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    // Open the log file in append mode
+    FILE *file = fopen("log.txt", "a");
+    if (file == NULL) {
+        perror("Failed to open log file");
+        va_end(args);
+        return;
+    }
+
+    // Print the time before the log message
+    fprintf(file, "[%s]  |  ", time_buffer);
+    vfprintf(file, format, args);
+    fprintf(file, "\n");
+
+    // Close the log file
+    fclose(file);
+
+    va_end(args);
 }
