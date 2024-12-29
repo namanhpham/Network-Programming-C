@@ -6,23 +6,6 @@
 #include "../utils.h"
 #include <stdio.h>
 
-#define FRIEND_REQUEST_FILE "friend_requests.txt"
-
-FriendPair friends[MAX_FRIENDS] = {0};
-
-int is_online(const char *username)
-{
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        // Kiểm tra nếu client ở vị trí i có username khớp và đang kết nối
-        if (clients[i]->socket > 0 && strcmp(clients[i]->username, username) == 0)
-        {
-            return 1; // Người dùng đang trực tuyến
-        }
-    }
-    return 0; // Người dùng không trực tuyến
-}
-
 // Luu yêu cầu kết bạn vào cơ sở dữ liệu 
 int save_friend_request(PGconn *conn, const char *from_username, const char *to_username)
 {
