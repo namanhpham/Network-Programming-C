@@ -41,13 +41,20 @@ void handle_private_message(Client *client, char *payload, PGconn *conn)
 
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
-        if (online_clients[i] && strcmp(online_clients[i]->username, receiver_username) == 0)
+        if ((online_clients[i] && (strcmp(online_clients[i]->username, receiver_username) == 0)))
         {
             Message msg = create_message(MSG_PRIVATE_MSG, (uint8_t *)full_message, strlen(full_message));
+            printf("Sending private message to %s\n", receiver_username);
+            printf("Message: %s\n", full_message);
+            printf("Send to %d\n", online_clients[i]->socket);
             send_message(online_clients[i]->socket, &msg);
             break;
         }
     }
+
+    // send to sender too
+    Message msg = create_message(MSG_PRIVATE_MSG, (uint8_t *)full_message, strlen(full_message));
+    send_message(client->socket, &msg);
 
     // Save message to database
     const char *paramValues[4] = {user_id, receiver_id, message_content, "NOW()"};
