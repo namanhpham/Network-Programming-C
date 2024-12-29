@@ -3,6 +3,9 @@
 #include <arpa/inet.h>
 #include "protocol.h" // Ensure the protocol header is included
 #include "client_gui.h"
+#include "chat_tab.h"
+#include "friend_tab.h"
+#include "group_tab.h"
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080
@@ -12,8 +15,8 @@ static pthread_t recv_thread;
 static GtkWidget *login_window;
 static GtkWidget *register_window;
 static GtkWidget *chat_window;
-static GtkWidget *message_entry;
-static GtkWidget *chat_text_view;
+GtkWidget *message_entry;  // Remove static
+GtkWidget *chat_text_view; // Remove static
 static GtkWidget *recipient_entry;
 static int is_logged_in = 0;
 
@@ -438,34 +441,15 @@ GtkWidget *create_chat_window()
     gtk_box_pack_start(GTK_BOX(hbox), group_sidebar, FALSE, FALSE, 0);
 
     // Chat vbox
-    chat_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    chat_vbox = create_chat_tab();
     gtk_box_pack_start(GTK_BOX(hbox), chat_vbox, TRUE, TRUE, 0);
 
-    // Chat text view with scroll
-    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request(scrolled_window, -1, 300); // Fixed height for chat area
-
-    chat_text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(chat_text_view), FALSE);
-    gtk_container_add(GTK_CONTAINER(scrolled_window), chat_text_view);
-    gtk_box_pack_start(GTK_BOX(chat_vbox), scrolled_window, TRUE, TRUE, 0);
-
-    GtkWidget *input_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_pack_start(GTK_BOX(chat_vbox), input_hbox, FALSE, FALSE, 0);
-
-    message_entry = gtk_entry_new();
-    gtk_box_pack_start(GTK_BOX(input_hbox), message_entry, TRUE, TRUE, 0);
-
-    GtkWidget *send_button = gtk_button_new_with_label("Send");
-    gtk_box_pack_start(GTK_BOX(input_hbox), send_button, FALSE, FALSE, 0);
-
     // Friend vbox
-    friend_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    friend_vbox = create_friend_tab();
     gtk_box_pack_start(GTK_BOX(hbox), friend_vbox, TRUE, TRUE, 0);
 
     // Group vbox
-    group_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    group_vbox = create_group_tab();
     gtk_box_pack_start(GTK_BOX(hbox), group_vbox, TRUE, TRUE, 0);
 
     // Initially show chat vbox and sidebar
@@ -480,7 +464,6 @@ GtkWidget *create_chat_window()
     g_signal_connect(chat_icon, "clicked", G_CALLBACK(switch_tab), chat_vbox);
     g_signal_connect(friend_icon, "clicked", G_CALLBACK(switch_tab), friend_vbox);
     g_signal_connect(group_icon, "clicked", G_CALLBACK(switch_tab), group_vbox);
-    g_signal_connect(send_button, "clicked", G_CALLBACK(send_message_to_user), NULL);
     g_signal_connect(logout_icon, "clicked", G_CALLBACK(on_logout_button_clicked), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
