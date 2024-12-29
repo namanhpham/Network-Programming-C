@@ -1,5 +1,4 @@
 #include <gtk/gtk.h>
-#include "client_gui.h"
 
 // Declare external variables
 extern GtkWidget *chat_text_view;

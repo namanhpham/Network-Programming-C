@@ -21,7 +21,7 @@ SERVER_SRCS = common.c \
 CLIENT_SRCS = protocol.c client.c
 
 # Source files for client GUI
-CLIENT_GUI_SRCS = protocol.c client_gui.c chat_tab.c friend_tab.c group_tab.c
+CLIENT_GUI_SRCS = protocol.c ui/client_gui.c private_message/chat_tab.c friendship/friend_tab.c group/group_tab.c
 
 # Output binaries
 SERVER_TARGET = server
