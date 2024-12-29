@@ -100,6 +100,9 @@ void *receive_messages(void *arg)
         case MSG_PRIVATE_MSG_HISTORY:
             printf("Private message history:\n%s\n", (char *)msg.payload);
             break;
+        case MSG_PRIVATE_MSG:
+            printf("Message from friend: %s\n", (char *)msg.payload);
+            break;
         default:
             printf("Unknown message type received.\n");
             break;

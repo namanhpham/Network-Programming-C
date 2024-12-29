@@ -67,7 +67,7 @@ void *receive_messages(void *arg)
         {
             is_logged_in = 1;
         }
-        else if (msg.type == RESP_FAILURE)
+        else if (msg.type == RESP_LOGIN_FAILURE)
         {
             is_logged_in = 0;
         }
