@@ -132,6 +132,9 @@ void *handle_client(void *arg)
         case MSG_PRIVATE_MSG_HISTORY:
             handle_see_private_messages(client, (char *)message.payload, conn);
             break;
+        case MSG_SEE_JOINED_GROUPS:
+            handle_see_joined_groups(client);
+            break;
         }
     }
 

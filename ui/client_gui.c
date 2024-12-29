@@ -6,11 +6,12 @@
 #include "../private_message/chat_tab.h"
 #include "../friendship/friend_tab.h"
 #include "../group/group_tab.h"
+#include <string.h> 
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080
 
-static int sockfd;
+int sockfd;
 static char *current_friends_list = NULL;
 static pthread_t recv_thread;
 static GtkWidget *login_window;
@@ -18,6 +19,7 @@ static GtkWidget *register_window;
 static GtkWidget *chat_window;
 GtkWidget *message_entry;  // Remove static
 GtkWidget *chat_text_view; // Remove static
+GtkWidget *chat_group_view;
 static GtkWidget *recipient_entry;
 static int is_logged_in = 0;
 
@@ -29,6 +31,8 @@ static GtkWidget *current_vbox;
 static GtkWidget *chat_sidebar;
 static GtkWidget *friend_sidebar;
 static GtkWidget *group_sidebar;
+
+char current_group[256]; // Stores the name of the currently selected group
 static GtkWidget *friends_list_box;
 
 // Function to display a message in the chat window
@@ -60,6 +64,20 @@ void clear_chat_window()
 {
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_text_view));
     gtk_text_buffer_set_text(buffer, "", -1);
+}
+void clear_chat_group_window()
+{
+    if (!GTK_IS_TEXT_VIEW(chat_group_view))
+    {
+        fprintf(stderr, "Error: chat_group_view is not a valid GtkTextView\n");
+        return;
+    }
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_group_view));
+    if (buffer)
+    {
+        gtk_text_buffer_set_text(buffer, "", -1);
+    }
 }
 
 void on_friend_button_clicked(GtkWidget *widget, gpointer data)
@@ -142,6 +160,90 @@ void *receive_messages(void *arg)
             break;
         case MSG_LOGOUT:
             break;
+     
+        case RESP_SEE_JOINED_GROUPS:
+            // Update the list of joined groups in the group tab
+            g_idle_add((GSourceFunc)update_group_list, (gpointer)msg.payload);
+            break;
+
+        case MSG_GROUP_MSG_HISTORY:
+        {
+             // Chuyển payload sang dạng chuỗi C
+            char buffer[CHUNK_SIZE + 1];
+            int len = strlen((char *)msg.payload); // Lấy độ dài payload từ trường length
+            if (len > CHUNK_SIZE) 
+            {
+                len = CHUNK_SIZE; // Đảm bảo không vượt quá kích thước buffer
+            }
+            memcpy(buffer, msg.payload, len);
+            buffer[len] = '\0'; // Đảm bảo buffer là chuỗi C hợp lệ
+
+            // Kiểm tra tín hiệu kết thúc
+            if (strstr(buffer, "--- End of message history ---") != NULL)
+            {
+                printf("End of message history received.\n");
+                break; // Dừng case này nhưng tiếp tục xử lý các thông điệp khác (nếu có)
+            }
+
+            // Thêm nội dung vào GtkTextView
+            GtkTextBuffer *buffer_view = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_group_view));
+            if (!buffer_view)
+            {
+                fprintf(stderr, "Error: Failed to get buffer\n");
+                break;
+            }
+            GtkTextIter end_iter;
+            gtk_text_buffer_get_end_iter(buffer_view, &end_iter);
+            gtk_text_buffer_insert(buffer_view, &end_iter, buffer, -1);
+        }
+            break;
+        case MSG_GROUP_MSG:
+        {
+            // Lấy tên nhóm từ payload theo format [group_name] username: message
+            char *payload_copy = strdup((char *)msg.payload); // Tạo bản sao của payload để xử lý an toàn
+            if (!payload_copy)
+            {
+                fprintf(stderr, "Memory allocation failed\n");
+                break;
+            }
+
+            char *group_name = strtok(payload_copy, " ");
+            char *username = strtok(NULL, ":");
+            char *message = strtok(NULL, "");
+
+            // Check if group_name exists and belongs to the current group
+            if (!group_name)
+            {
+                free(payload_copy); // Free the allocated copy
+                break; // Skip if group_name is invalid
+            }
+
+            // Extract the group name without brackets
+            char *actual_group_name = strtok(group_name, "[]");
+            if (!actual_group_name || strcmp(actual_group_name, current_group) != 0)
+            {
+                free(payload_copy); // Free the allocated copy
+                break; // Skip if not the current group
+            }
+           
+            printf("Group: %s, Username: %s, Message: %s\n", group_name, username, message);
+            if (group_name && username && message)
+            {
+                // Tạo buffer để chứa toàn bộ nội dung username và message
+                char combined_message[512];
+                snprintf(combined_message, sizeof(combined_message), "%s: %s", username, message);
+
+                update_message_history(combined_message);
+            }
+            else
+            {
+                fprintf(stderr, "Malformed message payload\n");
+            }
+
+            free(payload_copy); // Giải phóng bản sao
+            break;
+        }
+            
         case MSG_FRIENDS_LIST:
         {
             char *friends_data = g_strdup((char *)msg.payload);
@@ -415,7 +517,12 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
         gtk_widget_show_all(friend_sidebar);
     }
     else if (vbox == group_vbox)
-    {
+    {   
+        Message msg = create_message(MSG_SEE_JOINED_GROUPS, (uint8_t *)"List groups", 11);
+        if (send_message(sockfd, &msg) < 0)
+        {
+            perror("Failed to list groups");
+        }
         gtk_widget_show_all(group_sidebar);
     }
 }
