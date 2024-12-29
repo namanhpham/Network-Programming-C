@@ -16,8 +16,6 @@
 #include "utils.h"
 
 #define PORT 8080
-#define MAX_FRIENDS 100 // Định nghĩa số lượng bạn bè tối đa (có thể điều chỉnh)
-#define FRIEND_REQUEST_FILE "friend_requests.txt"
 #define CONNECTION_STRING_LENGTH 512
 
 // Function prototypes

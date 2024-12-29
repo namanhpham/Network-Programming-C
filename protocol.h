@@ -106,12 +106,6 @@ typedef struct
     PGconn *conn;
 } Client;
 
-typedef struct
-{
-    char username1[128];
-    char username2[128];
-} FriendPair;
-
 // Hàm để tạo thông điệp
 Message create_message(uint8_t type, const uint8_t *payload, size_t payload_size);
 
