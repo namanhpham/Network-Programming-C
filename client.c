@@ -32,72 +32,79 @@ void *receive_messages(void *arg)
 
         // Process received message
         pthread_mutex_lock(&login_mutex); // Lock mutex before updating is_logged_in
-        switch (msg.type) {
-            case RESP_REGISTER_SUCCESS:
-                printf("Registration successful!\n");
-                break;
-            case RESP_LOGIN_SUCCESS:
-                is_logged_in = 1;
-                break;
-            case RESP_LOGIN_FAILURE:
-                printf("Login or registration failed.\n");
-                is_logged_in = 0;
-                break;
-            case RESP_SUCCESS:
-                printf("Success: %s\n", (char *)msg.payload);
-                break;
-            case RESP_FAILURE:
-                printf("Failure: %s\n", (char *)msg.payload);
-                break;
-            case MSG_ONLINE_USERS:
-                printf("Online users: %s\n", (char *)msg.payload);
-                break;
-            case MSG_FRIEND_REQUEST: {
-                printf("You have friend request from: %s\n", (char *)msg.payload);
-                break;
-            }
-            case MSG_FRIENDS_LIST: {
-                printf("%s\n", (char *)msg.payload);
-                break;
-            }
-            case MSG_FRIEND_REQUEST_LIST: {
-                printf("%s\n", (char *)msg.payload);
-                break;
-            }
-            case MSG_FRIEND_REQUEST_ACCEPTED:
-                printf("Your friend request was accepted by: %s\n", (char *)msg.payload);
-                break;
-            case MSG_FRIEND_REQUEST_DECLINED:
-                printf("Your friend request was declined by: %s\n", (char *)msg.payload);
-                break;
-            case MSG_FRIEND_REMOVED:
-                printf("You are no longer friends with: %s\n", (char *)msg.payload);
-                break;
-            case MSG_GROUP_MSG_HISTORY:
-            {
-                printf("%s", (char *)msg.payload);
-                break;
-            }
-            case MSG_GROUP_MSG:
-            {
-                printf("%s\n", (char *)msg.payload);
-                break;
-            }
-            case RESP_LEAVE_GROUP:
-            {
-                printf("%s\n", (char *)msg.payload);
-                break;
-            }
-            case RESP_REMOVE_GROUP_MEMBER:
-            {
-                printf("%s\n", (char *)msg.payload);
-                break;
-            }
-                default:
-                    printf("Unknown message type received.\n");
-                    break;
-            }
-            pthread_mutex_unlock(&login_mutex); // Unlock after updating
+        switch (msg.type)
+        {
+        case RESP_REGISTER_SUCCESS:
+            printf("Registration successful!\n");
+            break;
+        case RESP_LOGIN_SUCCESS:
+            is_logged_in = 1;
+            break;
+        case RESP_LOGIN_FAILURE:
+            printf("Login or registration failed.\n");
+            is_logged_in = 0;
+            break;
+        case RESP_SUCCESS:
+            printf("Success: %s\n", (char *)msg.payload);
+            break;
+        case RESP_FAILURE:
+            printf("Failure: %s\n", (char *)msg.payload);
+            break;
+        case MSG_ONLINE_USERS:
+            printf("Online users: %s\n", (char *)msg.payload);
+            break;
+        case MSG_FRIEND_REQUEST:
+        {
+            printf("You have friend request from: %s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_FRIENDS_LIST:
+        {
+            printf("%s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_FRIEND_REQUEST_LIST:
+        {
+            printf("%s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_FRIEND_REQUEST_ACCEPTED:
+            printf("Your friend request was accepted by: %s\n", (char *)msg.payload);
+            break;
+        case MSG_FRIEND_REQUEST_DECLINED:
+            printf("Your friend request was declined by: %s\n", (char *)msg.payload);
+            break;
+        case MSG_FRIEND_REMOVED:
+            printf("You are no longer friends with: %s\n", (char *)msg.payload);
+            break;
+        case MSG_GROUP_MSG_HISTORY:
+        {
+            printf("%s", (char *)msg.payload);
+            break;
+        }
+        case MSG_GROUP_MSG:
+        {
+            printf("%s\n", (char *)msg.payload);
+            break;
+        }
+        case RESP_LEAVE_GROUP:
+        {
+            printf("%s\n", (char *)msg.payload);
+            break;
+        }
+        case RESP_REMOVE_GROUP_MEMBER:
+        {
+            printf("%s\n", (char *)msg.payload);
+            break;
+        }
+        case MSG_PRIVATE_MSG_HISTORY:
+            printf("Private message history:\n%s\n", (char *)msg.payload);
+            break;
+        default:
+            printf("Unknown message type received.\n");
+            break;
+        }
+        pthread_mutex_unlock(&login_mutex); // Unlock after updating
     }
     return NULL;
 }
@@ -292,12 +299,13 @@ void logout_user(int sockfd)
     }
 }
 
-void accept_friend_request(int sockfd) {
+void accept_friend_request(int sockfd)
+{
     // Fetch and display friend request list first
     see_friend_requests(sockfd);
 
     // Delay to allow `receive_messages` to display the friend request list
-    struct timespec delay = {0, 500000000L};  // 500ms
+    struct timespec delay = {0, 500000000L}; // 500ms
     nanosleep(&delay, NULL);
 
     char friend_username[128];
@@ -305,19 +313,23 @@ void accept_friend_request(int sockfd) {
     scanf("%127s", friend_username);
 
     Message msg = create_message(MSG_FRIEND_REQUEST_ACCEPTED, (uint8_t *)friend_username, strlen(friend_username));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to accept friend request");
-    } else {
+    }
+    else
+    {
         printf("Friend request accepted.\n");
     }
 }
 
-void decline_friend_request(int sockfd) {
+void decline_friend_request(int sockfd)
+{
     // Fetch and display friend request list first
     see_friend_requests(sockfd);
 
     // Delay to allow `receive_messages` to display the friend request list
-    struct timespec delay = {0, 500000000L};  // 500ms
+    struct timespec delay = {0, 500000000L}; // 500ms
     nanosleep(&delay, NULL);
 
     char friend_username[128];
@@ -325,29 +337,38 @@ void decline_friend_request(int sockfd) {
     scanf("%127s", friend_username);
 
     Message msg = create_message(MSG_FRIEND_REQUEST_DECLINED, (uint8_t *)friend_username, strlen(friend_username));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to decline friend request");
-    } else {
+    }
+    else
+    {
         printf("Friend request declined.\n");
     }
 }
 
-void get_friend_list(int sockfd) {
+void get_friend_list(int sockfd)
+{
     Message msg = create_message(MSG_FRIENDS_LIST, (uint8_t *)"Get friend list", 15);
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to get friend list");
     }
 }
 
-void remove_friend(int sockfd) {
+void remove_friend(int sockfd)
+{
     char friend_username[128];
     printf("Enter the username of the friend to remove: ");
     scanf("%127s", friend_username);
 
     Message msg = create_message(MSG_FRIEND_REMOVED, (uint8_t *)friend_username, strlen(friend_username));
-    if (send_message(sockfd, &msg) < 0) {
+    if (send_message(sockfd, &msg) < 0)
+    {
         perror("Failed to remove friend");
-    } else {
+    }
+    else
+    {
         printf("Friend removal request sent.\n");
     }
 }
@@ -404,7 +425,22 @@ void remove_group_members(int sockfd)
         perror("Failed to remove group members");
     }
 }
-int main() {
+
+void see_private_messages(int sockfd)
+{
+    char friend_username[128];
+    printf("Enter friend's username to see message history: ");
+    scanf("%127s", friend_username);
+
+    Message msg = create_message(MSG_PRIVATE_MSG_HISTORY, (uint8_t *)friend_username, strlen(friend_username));
+    if (send_message(sockfd, &msg) < 0)
+    {
+        perror("Failed to see private messages");
+    }
+}
+
+int main()
+{
     int sockfd = connect_to_server();
     pthread_t recv_thread;
 
@@ -422,9 +458,12 @@ int main() {
         int logged_in = is_logged_in;
         pthread_mutex_unlock(&login_mutex);
 
-        if (logged_in) {
+        if (logged_in)
+        {
             printf("Enter command (3: send message, 4: exit, 5: add friend, 6: see friend requests, 7: create group chat, 8: join group chat, 9: send group message, 10: logout, 11: list groups, 12: see group messages, 13: leave group, 14: remove group members, 15: accept friend request, 16: decline friend request, 17: get friend list, 18: remove friend) ): ");
-        } else {
+        }
+        else
+        {
             printf("Enter command (1: register, 2: login, 3: send message, 4: exit): ");
         }
         printf("main: is_logged_in = %d\n", logged_in);
@@ -477,7 +516,6 @@ int main() {
         case 6:
             see_friend_requests(sockfd);
             break;
-
         case 7:
             create_group(sockfd);
             break;
@@ -521,6 +559,9 @@ int main() {
             break;
         case 18:
             remove_friend(sockfd);
+            break;
+        case 19:
+            see_private_messages(sockfd);
             break;
 
         default:

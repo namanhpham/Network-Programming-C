@@ -8,43 +8,44 @@
 #include <libpq-fe.h>
 
 // Loại thông điệp (Message Types)
-#define MSG_REGISTER             0x01  // Đăng ký tài khoản
-#define MSG_LOGIN                0x02  // Đăng nhập
-#define MSG_LOGOUT               0x03  // Đăng xuất
-#define MSG_FRIEND_REQUEST       0x04  // Gửi lời mời kết bạn
-#define MSG_FRIEND_ACCEPT        0x05  // Chấp nhận lời mời kết bạn
-#define MSG_FRIEND_DECLINE       0x06  // Từ chối lời mời kết bạn
-#define MSG_FRIEND_REMOVE        0x07  // Hủy kết bạn
-#define MSG_FRIEND_LIST          0x08  // Lấy danh sách bạn bè và trạng thái
-#define MSG_PRIVATE_MSG          0x09  // Gửi tin nhắn riêng tư
-#define MSG_DISCONNECT           0x0A  // Ngắt kết nối
-#define MSG_CREATE_GROUP         0x0B  // Tạo nhóm chat
-#define MSG_ADD_GROUP_MEMBER     0x0C  // Thêm thành viên vào nhóm chat
-#define MSG_REMOVE_GROUP_MEMBER  0x0D  // Xóa thành viên khỏi nhóm chat
-#define MSG_LEAVE_GROUP          0x0E  // Rời nhóm chat
-#define MSG_GROUP_MSG            0x0F  // Gửi tin nhắn trong nhóm chat
-#define MSG_OFFLINE_MSG          0x10  // Gửi tin nhắn offline
-#define MSG_LOG_ACTIVITY         0x11  // Ghi log hoạt động
-#define MSG_STATUS_UPDATE        0x12  // Cập nhật trạng thái online/offline
-#define MSG_ONLINE_USERS         0x13  // Danh sách người dùng đang online
-#define MSG_FRIEND_REQUEST_ACCEPTED 0x14  // Thông báo chấp nhận lời mời kết bạn
-#define MSG_FRIEND_REQUEST_DECLINED 0x15  // Thông báo từ chối lời mời kết bạn
-#define MSG_FRIEND_REQUEST_LIST  0x16  // Danh sách lời mời kết bạn
-#define MSG_FRIEND_REMOVED       0x17  // Thông báo hủy kết bạn
-#define MSG_FRIENDS_LIST         0x18  // Danh sách bạn bè
-#define MSG_GROUP_MSG_HISTORY    0x19  // Lịch sử chat trong group
-#define MSG_JOIN_GROUP 0x30//Tham gia nhóm chat.
-#define MSG_LIST_GROUPS 0x31//Lấy danh sách các nhóm chat.
+#define MSG_REGISTER 0x01                // Đăng ký tài khoản
+#define MSG_LOGIN 0x02                   // Đăng nhập
+#define MSG_LOGOUT 0x03                  // Đăng xuất
+#define MSG_FRIEND_REQUEST 0x04          // Gửi lời mời kết bạn
+#define MSG_FRIEND_ACCEPT 0x05           // Chấp nhận lời mời kết bạn
+#define MSG_FRIEND_DECLINE 0x06          // Từ chối lời mời kết bạn
+#define MSG_FRIEND_REMOVE 0x07           // Hủy kết bạn
+#define MSG_FRIEND_LIST 0x08             // Lấy danh sách bạn bè và trạng thái
+#define MSG_PRIVATE_MSG 0x09             // Gửi tin nhắn riêng tư
+#define MSG_DISCONNECT 0x0A              // Ngắt kết nối
+#define MSG_CREATE_GROUP 0x0B            // Tạo nhóm chat
+#define MSG_ADD_GROUP_MEMBER 0x0C        // Thêm thành viên vào nhóm chat
+#define MSG_REMOVE_GROUP_MEMBER 0x0D     // Xóa thành viên khỏi nhóm chat
+#define MSG_LEAVE_GROUP 0x0E             // Rời nhóm chat
+#define MSG_GROUP_MSG 0x0F               // Gửi tin nhắn trong nhóm chat
+#define MSG_OFFLINE_MSG 0x10             // Gửi tin nhắn offline
+#define MSG_LOG_ACTIVITY 0x11            // Ghi log hoạt động
+#define MSG_STATUS_UPDATE 0x12           // Cập nhật trạng thái online/offline
+#define MSG_ONLINE_USERS 0x13            // Danh sách người dùng đang online
+#define MSG_FRIEND_REQUEST_ACCEPTED 0x14 // Thông báo chấp nhận lời mời kết bạn
+#define MSG_FRIEND_REQUEST_DECLINED 0x15 // Thông báo từ chối lời mời kết bạn
+#define MSG_FRIEND_REQUEST_LIST 0x16     // Danh sách lời mời kết bạn
+#define MSG_FRIEND_REMOVED 0x17          // Thông báo hủy kết bạn
+#define MSG_FRIENDS_LIST 0x18            // Danh sách bạn bè
+#define MSG_GROUP_MSG_HISTORY 0x19       // Lịch sử chat trong group
+#define MSG_JOIN_GROUP 0x30              // Tham gia nhóm chat.
+#define MSG_LIST_GROUPS 0x31             // Lấy danh sách các nhóm chat.
+#define MSG_PRIVATE_MSG_HISTORY 0x32     // Lịch sử tin nhắn riêng tư
 
 // Mã phản hồi (Response Codes)
-#define RESP_LOGIN_SUCCESS       0x20  // Thông điệp thành công
-#define RESP_LOGIN_FAILURE             0x21  // Thông điệp thất bại
-#define RESP_FRIEND_LIST         0x22  // Danh sách bạn bè và trạng thái
-#define RESP_REGISTER_SUCCESS    0x23  // Đăng ký tài khoản thành công
-#define RESP_SUCCESS             0x24  // Thành công
-#define RESP_FAILURE             0x25  // Thất bại
+#define RESP_LOGIN_SUCCESS 0x20    // Thông điệp thành công
+#define RESP_LOGIN_FAILURE 0x21    // Thông điệp thất bại
+#define RESP_FRIEND_LIST 0x22      // Danh sách bạn bè và trạng thái
+#define RESP_REGISTER_SUCCESS 0x23 // Đăng ký tài khoản thành công
+#define RESP_SUCCESS 0x24          // Thành công
+#define RESP_FAILURE 0x25          // Thất bại
 
-#define RESP_LEAVE_GROUP        0x33 // Thông báo rời nhóm chat
+#define RESP_LEAVE_GROUP 0x33         // Thông báo rời nhóm chat
 #define RESP_REMOVE_GROUP_MEMBER 0x34 // Thông báo xóa thành viên khỏi nhóm chat
 // Định dạng thông điệp
 // Message Type (1 byte) | Payload (tùy loại thông điệp)
@@ -88,13 +89,15 @@
 //     Payload: [user_id (4 byte)] [status (1 byte)]
 
 // Hàm để mã hóa thông điệp (Tạo cấu trúc)
-typedef struct {
-    uint8_t type;           // Loại thông điệp (Message Type)
-    uint8_t payload[256];   // Dữ liệu của thông điệp (tối đa 256 bytes)
+typedef struct
+{
+    uint8_t type;         // Loại thông điệp (Message Type)
+    uint8_t payload[256]; // Dữ liệu của thông điệp (tối đa 256 bytes)
 } Message;
 
 // Struct lưu thông tin cho mỗi client
-typedef struct {
+typedef struct
+{
     int socket;
     struct sockaddr_in address;
     char user_id[37]; // UUID as identifier
@@ -103,7 +106,8 @@ typedef struct {
     PGconn *conn;
 } Client;
 
-typedef struct {
+typedef struct
+{
     char username1[128];
     char username2[128];
 } FriendPair;
