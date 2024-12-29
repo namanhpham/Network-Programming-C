@@ -6,7 +6,7 @@
 #include "../private_message/chat_tab.h"
 #include "../friendship/friend_tab.h"
 #include "../group/group_tab.h"
-#include <string.h> 
+#include <string.h>
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8080
@@ -91,21 +91,18 @@ void on_friend_button_clicked(GtkWidget *widget, gpointer data)
 
 void display_friends_list(const char *friends)
 {
-    // So sánh với danh sách bạn bè hiện tại
     if (current_friends_list && strcmp(current_friends_list, friends) == 0)
     {
         g_print("Friends list unchanged, skipping update.\n");
-        return; // Không cần cập nhật
+        return;
     }
 
-    // Cập nhật danh sách bạn bè hiện tại
     if (current_friends_list)
     {
         free(current_friends_list);
     }
     current_friends_list = strdup(friends);
 
-    // Xóa toàn bộ các widget con trong friends_list_boxs
     gtk_container_foreach(GTK_CONTAINER(friends_list_box), (GtkCallback)gtk_widget_destroy, NULL);
 
     char *friends_copy = strdup(friends);
@@ -116,7 +113,6 @@ void display_friends_list(const char *friends)
         {
             GtkWidget *button = gtk_button_new_with_label(friend);
 
-            // Kết nối tín hiệu clicked cho nút
             g_signal_connect(button, "clicked", G_CALLBACK(on_friend_button_clicked), g_strdup(friend));
             g_print("Connected signal for friend: %s\n", friend);
 
@@ -160,7 +156,7 @@ void *receive_messages(void *arg)
             break;
         case MSG_LOGOUT:
             break;
-     
+
         case RESP_SEE_JOINED_GROUPS:
             // Update the list of joined groups in the group tab
             g_idle_add((GSourceFunc)update_group_list, (gpointer)msg.payload);
@@ -168,10 +164,10 @@ void *receive_messages(void *arg)
 
         case MSG_GROUP_MSG_HISTORY:
         {
-             // Chuyển payload sang dạng chuỗi C
+            // Chuyển payload sang dạng chuỗi C
             char buffer[CHUNK_SIZE + 1];
             int len = strlen((char *)msg.payload); // Lấy độ dài payload từ trường length
-            if (len > CHUNK_SIZE) 
+            if (len > CHUNK_SIZE)
             {
                 len = CHUNK_SIZE; // Đảm bảo không vượt quá kích thước buffer
             }
@@ -196,7 +192,7 @@ void *receive_messages(void *arg)
             gtk_text_buffer_get_end_iter(buffer_view, &end_iter);
             gtk_text_buffer_insert(buffer_view, &end_iter, buffer, -1);
         }
-            break;
+        break;
         case MSG_GROUP_MSG:
         {
             // Lấy tên nhóm từ payload theo format [group_name] username: message
@@ -215,7 +211,7 @@ void *receive_messages(void *arg)
             if (!group_name)
             {
                 free(payload_copy); // Free the allocated copy
-                break; // Skip if group_name is invalid
+                break;              // Skip if group_name is invalid
             }
 
             // Extract the group name without brackets
@@ -223,9 +219,9 @@ void *receive_messages(void *arg)
             if (!actual_group_name || strcmp(actual_group_name, current_group) != 0)
             {
                 free(payload_copy); // Free the allocated copy
-                break; // Skip if not the current group
+                break;              // Skip if not the current group
             }
-           
+
             printf("Group: %s, Username: %s, Message: %s\n", group_name, username, message);
             if (group_name && username && message)
             {
@@ -243,19 +239,61 @@ void *receive_messages(void *arg)
             free(payload_copy); // Giải phóng bản sao
             break;
         }
-            
+
         case MSG_FRIENDS_LIST:
         {
             char *friends_data = g_strdup((char *)msg.payload);
 
             g_idle_add((GSourceFunc)display_friends_list, friends_data);
+            g_idle_add((GSourceFunc)populate_friends_list, friends_data);
 
             g_print("Friends list received: %s\n", friends_data);
             break;
-        }
+        };
+        case MSG_FRIEND_REQUEST:
+            break;
+        case MSG_FRIEND_REQUEST_ACCEPTED:
+        {
+            char *friend_name = g_strdup((char *)msg.payload);
+            g_print("Friend request accepted by: %s\n", friend_name);
 
+            // Yêu cầu danh sách bạn bè mới
+            Message request_friends_list = create_message(MSG_FRIENDS_LIST, (uint8_t *)"", 0);
+            send_message(sockfd, &request_friends_list);
+
+            g_free(friend_name);
+            break;
+        }
+        case MSG_FRIEND_REQUEST_DECLINED:
+        {
+            char *friend_name = g_strdup((char *)msg.payload);
+            g_print("Friend request declined by: %s\n", friend_name);
+            g_free(friend_name);
+            break;
+        }
+        case MSG_FRIEND_REMOVED:
+        {
+            char *friend_name = g_strdup((char *)msg.payload);
+            g_print("Friend removed: %s\n", friend_name);
+
+            Message request_friends_list = create_message(MSG_FRIENDS_LIST, (uint8_t *)"", 0);
+            send_message(sockfd, &request_friends_list);
+
+            g_free(friend_name);
+            break;
+        }
+        case MSG_FRIEND_REQUEST_LIST:
+        {
+            char *requests_data = g_strdup((char *)msg.payload);
+
+            // Cập nhật danh sách yêu cầu kết bạn trên giao diện
+            g_idle_add((GSourceFunc)populate_friend_requests, requests_data);
+
+            g_print("Friend requests received: %s\n", requests_data);
+            break;
+        }
         default:
-            g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
+            // g_idle_add((GSourceFunc)display_message, (gpointer)msg.payload);
             break;
         }
     }
@@ -386,9 +424,9 @@ void on_login_button_clicked(GtkWidget *widget, gpointer data)
 
             // Ensure Chat tab and sidebar are displayed
             gtk_widget_hide(friend_vbox);
-            gtk_widget_hide(friend_sidebar);
+            // gtk_widget_hide(friend_sidebar);
             gtk_widget_hide(group_vbox);
-            gtk_widget_hide(group_sidebar);
+            // gtk_widget_hide(group_sidebar);
             gtk_widget_show_all(chat_vbox);
             gtk_widget_show_all(chat_sidebar);
             current_vbox = chat_vbox;
@@ -494,8 +532,8 @@ void on_logout_button_clicked(GtkWidget *widget, gpointer data)
 
     // Hide all sidebars and reset active tab
     gtk_widget_hide(chat_sidebar);
-    gtk_widget_hide(friend_sidebar);
-    gtk_widget_hide(group_sidebar);
+    // gtk_widget_hide(friend_sidebar);
+    // gtk_widget_hide(group_sidebar);
     gtk_widget_set_name(current_vbox, "tab_button");
     gtk_widget_hide(friend_vbox);
     gtk_widget_hide(group_vbox);
@@ -552,8 +590,8 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
 
     // Update sidebar visibility
     gtk_widget_hide(chat_sidebar);
-    gtk_widget_hide(friend_sidebar);
-    gtk_widget_hide(group_sidebar);
+    // gtk_widget_hide(friend_sidebar);
+    // gtk_widget_hide(group_sidebar);
 
     if (vbox == chat_vbox)
     {
@@ -564,7 +602,7 @@ void switch_tab(GtkWidget *widget, gpointer vbox)
         gtk_widget_show_all(friend_sidebar);
     }
     else if (vbox == group_vbox)
-    {   
+    {
         Message msg = create_message(MSG_SEE_JOINED_GROUPS, (uint8_t *)"List groups", 11);
         if (send_message(sockfd, &msg) < 0)
         {
@@ -690,9 +728,9 @@ GtkWidget *create_chat_window()
     gtk_widget_show_all(chat_vbox);
     gtk_widget_show_all(chat_sidebar);
     gtk_widget_hide(friend_vbox);
-    gtk_widget_hide(friend_sidebar);
+    // gtk_widget_hide(friend_sidebar);
     gtk_widget_hide(group_vbox);
-    gtk_widget_hide(group_sidebar);
+    // gtk_widget_hide(group_sidebar);
 
     g_signal_connect(chat_icon, "clicked", G_CALLBACK(switch_tab), chat_vbox);
     g_signal_connect(friend_icon, "clicked", G_CALLBACK(switch_tab), friend_vbox);
