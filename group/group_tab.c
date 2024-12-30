@@ -3,15 +3,60 @@
 
 // Declare external variables
 extern GtkWidget *chat_group_view;
+extern char current_user[256];
 GtkWidget *group_message_entry;
 GtkWidget *group_list;
 GtkWidget *chat_area;
 extern char current_group[256]; // Stores the name of the currently selected group
+char current_group_creator_name[256];
 extern void clear_chat_group_window();
 extern int sockfd;
 
 
-// Function to select a group
+void request_remove_group_member(GtkWidget *widget, gpointer data)
+{
+    const char *group_name = current_group;
+    const char *member_username = gtk_entry_get_text(GTK_ENTRY(data));
+
+    if (strlen(group_name) > 0 && strlen(member_username) > 0)
+    {
+        char payload[256];
+        snprintf(payload, sizeof(payload), "%s:%s", group_name, member_username);
+
+        Message msg = create_message(MSG_REMOVE_GROUP_MEMBER, (uint8_t *)payload, strlen(payload));
+        if (send_message(sockfd, &msg) < 0)
+        {
+            g_print("Failed to request removing group member\n");
+        }
+        gtk_entry_set_text(GTK_ENTRY(data), "");
+    }
+    else
+    {
+        g_print("Group name and member username cannot be empty\n");
+    }
+}
+
+void update_remove_member_ui(GtkWidget *chat_area, gboolean is_creator) {
+    static GtkWidget *remove_member_hbox = NULL;
+
+    if (is_creator && !remove_member_hbox) {
+        remove_member_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+
+        GtkWidget *remove_member_entry = gtk_entry_new();
+        gtk_box_pack_start(GTK_BOX(remove_member_hbox), remove_member_entry, TRUE, TRUE, 0);
+
+        GtkWidget *remove_button = gtk_button_new_with_label("Remove Member");
+        gtk_box_pack_start(GTK_BOX(remove_member_hbox), remove_button, FALSE, FALSE, 0);
+        g_signal_connect(remove_button, "clicked", G_CALLBACK(request_remove_group_member), remove_member_entry);
+
+        gtk_box_pack_start(GTK_BOX(chat_area), remove_member_hbox, FALSE, FALSE, 0);
+        gtk_widget_show_all(remove_member_hbox);
+    } else if (!is_creator && remove_member_hbox) {
+        gtk_widget_destroy(remove_member_hbox);
+        remove_member_hbox = NULL;
+    }
+}
+
 void select_group(GtkWidget *widget, gpointer data)
 {
     // Kiểm tra dữ liệu truyền vào
@@ -20,9 +65,16 @@ void select_group(GtkWidget *widget, gpointer data)
         fprintf(stderr, "Error: No group selected\n");
         return;
     }
+    // split data by ":"
+    char *group_data = (char *)data;
+    char *group_name = strtok(group_data, ":");
+    char *creator_name = strtok(NULL, "");
 
     strncpy(current_group, (const char *)data, sizeof(current_group) - 1);
     current_group[sizeof(current_group) - 1] = '\0';
+    printf("Selected group: %s\n", group_name);
+    strncpy(current_group_creator_name, creator_name, sizeof(current_group_creator_name) - 1);
+    current_group_creator_name[sizeof(current_group_creator_name) - 1] = '\0';
 
     // Clear chat area and request chat history
     clear_chat_group_window();
@@ -34,7 +86,11 @@ void select_group(GtkWidget *widget, gpointer data)
     send_message(sockfd, &msg);
 
     printf("Selected group: %s\n", current_group);
+    printf("Selected group creator: %s\n", current_group_creator_name);
+    // Update remove member UI based on creator status
+    update_remove_member_ui(chat_area, strcmp(current_user, current_group_creator_name) == 0);
 }
+
 
 
 // Function to populate the group list dynamically
@@ -42,34 +98,76 @@ void update_group_list(const char *groups)
 {
     static char *last_groups = NULL;
 
-    // Kiểm tra nếu dữ liệu không thay đổi, không thực hiện cập nhật
+    // Check if data hasn't changed, skip updating
     if (last_groups && strcmp(last_groups, groups) == 0)
         return;
 
-    // Lưu lại dữ liệu mới
+    // Save the new data
     g_free(last_groups);
     last_groups = g_strdup(groups);
 
-    // Xóa các widget cũ
+    // Clear old widgets before adding new ones
     gtk_container_foreach(GTK_CONTAINER(group_list), (GtkCallback)gtk_widget_destroy, NULL);
 
-    // Thêm các group mới
+    // Create a copy of the input string for processing
     char *groups_copy = g_strdup(groups);
-    char *group_name = strtok(groups_copy, ",");
-    while (group_name != NULL)
-    {
-        GtkWidget *group_button = gtk_button_new_with_label(group_name);
-        gtk_list_box_insert(GTK_LIST_BOX(group_list), group_button, -1);
-        g_signal_connect(group_button, "clicked", G_CALLBACK(select_group), g_strdup(group_name));
-        group_name = strtok(NULL, ",");
-    }
-    g_free(groups_copy);
-    printf("Group list updated\n");
 
-    // Hiển thị toàn bộ danh sách
+    // Remove trailing comma if it exists
+    size_t len = strlen(groups_copy);
+    if (len > 0 && groups_copy[len - 1] == ',')
+    {
+        groups_copy[len - 1] = '\0';
+    }
+
+    // Tokenization context for the outer loop
+    char *outer_ctx;
+    char *group_details = strtok_r(groups_copy, ",", &outer_ctx);
+
+    while (group_details != NULL)
+    {
+        // Make a copy of `group_details` to safely tokenize it
+        char *details_copy = g_strdup(group_details);
+
+        // Tokenization context for inner parsing
+        char *inner_ctx;
+        char *group_name = strtok_r(details_copy, ":", &inner_ctx);
+        char *creator_name = strtok_r(NULL, ":", &inner_ctx);
+        char *member_count = strtok_r(NULL, ":", &inner_ctx);
+
+        if (group_name && creator_name && member_count)
+        {
+            char display_text[256];
+            snprintf(display_text, sizeof(display_text), "Group: %s\nCreator: %s\nMembers: %s",
+                     group_name, creator_name, member_count);
+
+            // Create the button and add it to the list
+            GtkWidget *group_button = gtk_button_new_with_label(display_text);
+            gtk_list_box_insert(GTK_LIST_BOX(group_list), group_button, -1);
+            // Tạo chuỗi mới ghép group_name và creator_name
+            char formatted_group[128];
+            snprintf(formatted_group, sizeof(formatted_group), "%s:%s", group_name, creator_name);
+            printf("Formatted group: %s\n", formatted_group);
+            // Attach a click event handler for the button
+            g_signal_connect(group_button, "clicked", G_CALLBACK(select_group), g_strdup(formatted_group));
+        }
+        else
+        {
+            printf("Error parsing group details\n");
+        }
+
+        // Free the copy after processing
+        g_free(details_copy);
+
+        // Move to the next group
+        group_details = strtok_r(NULL, ",", &outer_ctx);
+    }
+
+    // Free the copied string
+    g_free(groups_copy);
+
+    // Show all widgets in the list
     gtk_widget_show_all(group_list);
 }
-
 
 // Function to send a message to the selected group
 void send_message_to_group(GtkWidget *widget, gpointer data)
@@ -198,17 +296,21 @@ void request_join_group(GtkWidget *widget, gpointer data)
 // Function to request leaving a group
 void request_leave_group(GtkWidget *widget, gpointer data)
 {
-    const char *group_name = (const char *)data;
+    const char *group_name = current_group;
 
     if (strlen(group_name) > 0)
     {
         char payload[256];
-        snprintf(payload, sizeof(payload), "LEAVE:%s", group_name);
-
+        snprintf(payload, sizeof(payload), "%s", group_name);
         Message msg = create_message(MSG_LEAVE_GROUP, (uint8_t *)payload, strlen(payload));
         if (send_message(sockfd, &msg) < 0)
         {
             g_print("Failed to request leaving group\n");
+        }
+        Message msg2 = create_message(MSG_SEE_JOINED_GROUPS, NULL, 0);
+        if (send_message(sockfd, &msg2) < 0)
+        {
+            g_print("Failed to request list of joined groups\n");
         }
     }
     else
@@ -216,6 +318,8 @@ void request_leave_group(GtkWidget *widget, gpointer data)
         g_print("Group name cannot be empty\n");
     }
 }
+
+
 
 // Function to create group tab layout
 GtkWidget *create_group_tab()
@@ -276,6 +380,13 @@ GtkWidget *create_group_tab()
     GtkWidget *send_button = gtk_button_new_with_label("Send");
     gtk_box_pack_start(GTK_BOX(input_hbox), send_button, FALSE, FALSE, 0);
     g_signal_connect(send_button, "clicked", G_CALLBACK(send_message_to_group), NULL);
+
+    update_remove_member_ui(chat_area, strcmp(current_user, current_group_creator_name) == 0);
+
+    // Leave group button
+    GtkWidget *leave_group_button = gtk_button_new_with_label("Leave Group");
+    gtk_box_pack_end(GTK_BOX(chat_area), leave_group_button, FALSE, FALSE, 0);
+    g_signal_connect(leave_group_button, "clicked", G_CALLBACK(request_leave_group), NULL);
 
     gtk_paned_pack2(GTK_PANED(group_tab), chat_area, TRUE, FALSE);
 

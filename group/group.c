@@ -270,6 +270,24 @@ void add_group_member_record(PGconn *conn, const char *group_id, const char *use
 
 void add_group_message_record(PGconn *conn, const char *group_id, const char *user_id, const char *message)
 {
+    // check if user is a member of the group
+    const char *check_sql = "SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2 AND deleted_at IS NULL;";
+    const char *paramCheckValues[2] = {group_id, user_id};
+    PGresult *check_res = PQexecParams(conn, check_sql, 2, NULL, paramCheckValues, NULL, NULL, 0);
+
+    if (PQresultStatus(check_res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Failed to check group member record: %s\n", PQerrorMessage(conn));
+        PQclear(check_res);
+        return;
+    }
+    if (PQntuples(check_res) == 0)
+    {
+        printf("User '%s' is not a member of group '%s'.\n", user_id, group_id);
+        PQclear(check_res);
+        return;
+    }
+
     const char *paramValues[3] = {group_id, user_id, message};
     const char *sql = "INSERT INTO message (group_id, user_id, content) VALUES ($1, $2, $3);";
 
@@ -421,6 +439,25 @@ void handle_remove_group_member(Client *client, const char *group_name, const ch
         printf("Group '%s' not found.\n", group_name);
         return;
     }
+    // find user has member_username using sql
+    const char *paramValues[1] = {member_username};
+    const char *sql = "SELECT id FROM users WHERE name = $1;";
+    PGresult *res = PQexecParams(client->conn, sql, 1, NULL, paramValues, NULL, NULL, 0);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
+        fprintf(stderr, "Failed to get user id: %s\n", PQerrorMessage(client->conn));
+        PQclear(res);
+        return;
+    }
+    if (PQntuples(res) == 0)
+    {
+        char *message = "User not found.\n";
+        Message msg = create_message(RESP_REMOVE_GROUP_MEMBER, (uint8_t *)message, strlen(message));
+        send_message(client->socket, &msg);
+        PQclear(res);
+        return;
+    }
+    const char *member_user_id = PQgetvalue(res, 0, 0);
     
     if (strcmp(group->creator_user_id, client->user_id) != 0)
     {
@@ -429,6 +466,7 @@ void handle_remove_group_member(Client *client, const char *group_name, const ch
         send_message(client->socket, &msg);
         return;
     }
+    set_group_member_deleted_at(client->conn, group->id, member_user_id);
     for (int j = 0; j < MAX_CLIENTS; j++)
     {   
         if (group->members[j])
@@ -454,9 +492,11 @@ void handle_remove_group_member(Client *client, const char *group_name, const ch
 void handle_see_joined_groups(Client *client)
 {
     const char *paramValues[1] = {client->user_id};
-    const char *sql = "SELECT g.name "
+    const char *sql = "SELECT g.name AS group_name, u.name AS creator_name, "
+                      "(SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id AND gm.deleted_at IS NULL) AS member_count "
                       "FROM group_table g "
                       "JOIN group_members gm ON g.id = gm.group_id "
+                      "JOIN users u ON g.creator_user_id = u.id "
                       "WHERE gm.user_id = $1 AND gm.deleted_at IS NULL;";
 
     PGresult *res = PQexecParams(client->conn, sql, 1, NULL, paramValues, NULL, NULL, 0);
@@ -467,16 +507,25 @@ void handle_see_joined_groups(Client *client)
         return;
     }
 
-    char group_list[1024] = "";
+    char group_list[4096] = ""; // Tăng kích thước buffer nếu cần
     for (int i = 0; i < PQntuples(res); i++)
     {
-        strcat(group_list, PQgetvalue(res, i, 0));
+        const char *group_name = PQgetvalue(res, i, 0);    // Tên nhóm
+        const char *creator_name = PQgetvalue(res, i, 1);  // Tên người tạo
+        const char *member_count = PQgetvalue(res, i, 2);  // Số lượng thành viên
+
+        char group_details[512];
+        snprintf(group_details, sizeof(group_details), "%s:%s:%s",
+                 group_name, creator_name, member_count);
+        strcat(group_list, group_details);
         strcat(group_list, ",");
     }
     PQclear(res);
 
+    // Tạo và gửi message
     Message msg = create_message(RESP_SEE_JOINED_GROUPS, (uint8_t *)group_list, strlen(group_list));
     send_message(client->socket, &msg);
+
     printf("Sent joined group list to %s\n", client->username);
     log_file("Sent joined group list to %s\n", client->username);
 }

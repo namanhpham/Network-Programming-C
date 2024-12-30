@@ -33,6 +33,7 @@ static GtkWidget *chat_sidebar;
 // static GtkWidget *group_sidebar;
 
 char current_group[256]; // Stores the name of the currently selected group
+char current_user[256];
 static GtkWidget *friends_list_box;
 
 // Function to display a message in the chat window
@@ -239,6 +240,16 @@ void *receive_messages(void *arg)
             free(payload_copy); // Giải phóng bản sao
             break;
         }
+        case RESP_REMOVE_GROUP_MEMBER:
+        {
+            update_message_history((char *)msg.payload);
+            Message msg = create_message(MSG_SEE_JOINED_GROUPS, NULL, 0);
+            if (send_message(sockfd, &msg) < 0)
+            {
+                g_print("Failed to request list of joined groups\n");
+            }
+            break;
+        }
 
         case MSG_FRIENDS_LIST:
         {
@@ -421,7 +432,9 @@ void on_login_button_clicked(GtkWidget *widget, gpointer data)
         {
             gtk_widget_hide(login_window);
             gtk_widget_show_all(chat_window);
-
+            // Store the current user's name
+            strncpy(current_user, username, sizeof(current_user) - 1);
+            current_user[sizeof(current_user) - 1] = '\0';
             // Ensure Chat tab and sidebar are displayed
             gtk_widget_hide(friend_vbox);
             // gtk_widget_hide(friend_sidebar);
