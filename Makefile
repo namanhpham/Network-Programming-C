@@ -8,7 +8,6 @@ LDFLAGS = -lpq
 # Source files for server
 SERVER_SRCS = common.c \
 	   friendship/friendship.c \
-       message_handling/message_handling.c \
        network_utils/network_utils.c \
        protocol.c \
        user_management/user_management.c \

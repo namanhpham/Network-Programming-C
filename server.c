@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include "network_utils/network_utils.h"
 #include "user_management/user_management.h"
-#include "message_handling/message_handling.h"
 #include "friendship/friendship.h"
 #include "group/group.h" // Include the group header file
 #include "private_message/private_message.h"
